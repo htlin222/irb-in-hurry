@@ -153,6 +153,7 @@ dashboard.sh                   # Terminal status dashboard
 - [Brainstorm](references/brainstorm.md) -- Research topic ideas tailored to KFSYSCC + Taiwan epidemiology
 - [Distill: Raw Text → Config](references/distill.md) -- How to extract config from free-form text
 - [Reviewer Criteria](references/reviewer.md) -- Simulated IRB review checklist
+- [Reviewer Guide](references/reviewer-guide.md) -- Rules of thumb, red flags, 45 CFR 46.111 training
 
 ## Validation
 

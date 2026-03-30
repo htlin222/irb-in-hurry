@@ -311,6 +311,87 @@ def check_administrative(config, form_texts):
     return results, findings
 
 
+def check_rules_of_thumb(config, form_texts):
+    """Apply experienced reviewer rules of thumb."""
+    findings = []
+    is_retro = config["study"].get("type") == "retrospective"
+    review_type = config["study"].get("review_type", "")
+    drug_device = config["study"].get("drug_device", False)
+    phase = config.get("phase", "")
+
+    # Rule: clinical trial claiming expedited is a red flag
+    if config["study"].get("type") == "clinical_trial" and review_type == "expedited":
+        findings.append(("required",
+            "Clinical trial marked as expedited review — clinical trials with novel interventions "
+            "typically require full board review (45 CFR 46.111)"))
+
+    # Rule: drug/device study without consent forms
+    if drug_device and config["subjects"].get("consent_waiver"):
+        findings.append(("required",
+            "Drug/device study with consent waiver — interventional studies "
+            "require informed consent (consent waiver typically only for retrospective/minimal risk)"))
+
+    # Rule: large sample with no groups defined
+    planned_n = config["subjects"].get("planned_n", 0)
+    groups = config["subjects"].get("groups", [])
+    if planned_n > 100 and not groups:
+        findings.append(("suggestion",
+            f"Sample size is {planned_n} but no study groups defined — "
+            "consider defining comparison groups for statistical analysis"))
+
+    # Rule: retrospective without data period
+    if is_retro and not config["dates"].get("data_period"):
+        findings.append(("required",
+            "Retrospective study without data collection period — "
+            "specify the date range of medical records being reviewed"))
+
+    # Rule: consent waiver without all 4 criteria justification
+    if config["subjects"].get("consent_waiver") and phase == "new":
+        if "SF005" not in form_texts:
+            findings.append(("required",
+                "Consent waiver claimed but SF005 (免取得知情同意檢核表) not generated — "
+                "all 4 waiver criteria must be documented (45 CFR 46.116(f)(3))"))
+
+    # Rule: title too vague or missing
+    title = config["study"].get("title_zh", "")
+    if len(title) < 10:
+        findings.append(("required",
+            "Study title is too short or missing — provide a descriptive Chinese title"))
+
+    # Rule: study period > 3 years for retrospective (unusual)
+    start = config["dates"].get("study_start", "")
+    end = config["dates"].get("study_end", "")
+    if start and end and is_retro:
+        try:
+            start_y = int(start[:4]) if start[:4].isdigit() else 0
+            end_y = int(end[:4]) if end[:4].isdigit() else 0
+            if end_y - start_y > 3:
+                findings.append(("note",
+                    f"Study period spans {end_y - start_y} years — "
+                    "longer study periods may require continuing review; plan for annual renewal"))
+        except (ValueError, IndexError):
+            pass
+
+    # Rule: co-PI from different department (strength, note it)
+    co_pis = config.get("co_pi", [])
+    pi_dept = config["pi"].get("dept", "")
+    for cp in co_pis:
+        cp_dept = cp.get("dept", "")
+        if cp_dept and pi_dept and cp_dept.split("／")[0] != pi_dept.split("／")[0]:
+            findings.append(("note",
+                f"Cross-departmental collaboration: PI ({pi_dept.split('／')[0]}) + "
+                f"Co-PI {cp['name']} ({cp_dept.split('／')[0]}) — "
+                "strengthens multidisciplinary perspective"))
+
+    # Rule: no IRB number for non-new submissions
+    if phase != "new" and not config["study"].get("irb_no"):
+        findings.append(("required",
+            f"Phase is '{phase}' but IRB number is blank — "
+            "non-new submissions require an existing IRB approval number"))
+
+    return findings
+
+
 def run_review(config_path="config.yml", output_dir="output"):
     """Run full review and generate opinion markdown."""
     config = load_config(config_path)
@@ -357,6 +438,10 @@ def run_review(config_path="config.yml", output_dir="output"):
         results, findings = checker(*args)
         all_results[category] = results
         all_findings.extend(findings)
+
+    # Run rules of thumb
+    rot_findings = check_rules_of_thumb(config, form_texts)
+    all_findings.extend(rot_findings)
 
     # Find placeholders in all forms
     placeholder_findings = []
@@ -445,6 +530,27 @@ def run_review(config_path="config.yml", output_dir="output"):
             "",
         ])
 
+    # 45 CFR 46.111 summary
+    is_retro = config["study"].get("type") == "retrospective"
+    review_type = config["study"].get("review_type", "")
+    lines.extend([
+        "---",
+        "",
+        "## 45 CFR 46.111 核准要件摘要",
+        "",
+        f"| # | Criterion | Status |",
+        f"|---|-----------|--------|",
+        f"| 1 | Risk minimization | {'■ Retrospective design — minimal risk' if is_retro else '□ Verify in protocol'} |",
+        f"| 2 | Reasonable risk-benefit | {'■ Knowledge benefit, no subject risk' if is_retro else '□ Verify in protocol'} |",
+        f"| 3 | Equitable selection | {'■ Consecutive patients from chart review' if is_retro else '□ Verify recruitment plan'} |",
+        f"| 4 | Informed consent sought | {'■ Waiver justified (retrospective)' if config['subjects'].get('consent_waiver') else '□ Consent form required'} |",
+        f"| 5 | Consent documented | {'■ SF005 waiver checklist' if config['subjects'].get('consent_waiver') else '□ Signed consent'} |",
+        f"| 6 | Safety monitoring | {'■ PI monitors data quality' if is_retro else '□ DSMP required'} |",
+        f"| 7 | Privacy protected | {'■' if config.get('closure', {}).get('data_safety', {}).get('deidentified') else '□'} De-identification + encryption |",
+        f"| 8 | Vulnerable safeguards | {'■ N/A' if not config['subjects'].get('vulnerable_population') else '□ Additional protections needed'} |",
+        "",
+    ])
+
     # Footer
     lines.extend([
         "---",
@@ -452,6 +558,7 @@ def run_review(config_path="config.yml", output_dir="output"):
         f"*本審查意見由 IRB-in-Hurry Reviewer 自動產生，僅供參考。*",
         f"*正式審查結果以和信治癌中心醫院人體試驗委員會之決議為準。*",
         f"*送審請寄：irb@kfsyscc.org*",
+        f"*審查指引：see .claude/skills/irb/references/reviewer-guide.md*",
     ])
 
     # Write to reviewers/
