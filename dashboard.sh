@@ -17,8 +17,18 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 # Extract from config using python (handles YAML properly)
-if command -v python3 &>/dev/null && [ -f "$CONFIG" ]; then
-    eval "$(python3 -c "
+# Use uv run if available, fallback to python3
+if command -v uv &>/dev/null && [ -f "pyproject.toml" ]; then
+    PY="uv run python"
+elif command -v python3 &>/dev/null; then
+    PY="python3"
+else
+    echo "⚠ python3 not found"
+    exit 1
+fi
+
+if [ -f "$CONFIG" ]; then
+    eval "$($PY -c "
 import yaml, sys
 with open('$CONFIG') as f:
     c = yaml.safe_load(f)

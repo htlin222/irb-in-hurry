@@ -5,16 +5,13 @@ Automated KFSYSCC IRB document preparation system.
 ## Quick Start
 
 ```bash
-source .venv/bin/activate
 # Edit config.yml with study details
-python scripts/generate_all.py    # Generate DOCX forms
-python scripts/convert.py         # Convert to PDF + PNG previews
-./dashboard.sh                    # View status
+make all                          # Generate + PDF + dashboard
 ```
 
 ## Conventions
 
-- **Python**: Use `uv` for venv, `python-docx` for form generation
+- **Python**: Managed by `uv` (pyproject.toml), run via `uv run` or `make`
 - **Font**: 標楷體 (DFKai-SB) for all form text
 - **Checkbox**: ■ (U+25A0) = checked, □ (U+25A1) = unchecked
 - **Config**: All study data in `config.yml`, never hardcoded
@@ -35,6 +32,6 @@ python scripts/convert.py         # Convert to PDF + PNG previews
 
 ```bash
 cp tests/fixtures/sample_retrospective.yml config.yml
-python scripts/generate_all.py
-pytest tests/
+make all
+make test
 ```

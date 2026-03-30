@@ -1,5 +1,0 @@
-python-docx
-pyyaml
-pytest
-pdf2image
-Pillow
