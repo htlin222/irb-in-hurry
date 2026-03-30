@@ -1,0 +1,59 @@
+study:
+  irb_no: 20250801A
+  project_no: 不適用
+  title_zh: 早期乳癌患者接受化療期間白血球生長激素 (G-CSF) 預防的最佳時機：單中心回顧性研究
+  title_en:
+    "Impact of Early versus Delayed G-CSF Administration on Clinical Outcomes
+    in Chemotherapy-induced Neutropenia: A Propensity Score-matching Cohort Study"
+  type: retrospective
+  design: cohort
+  review_type: expedited
+  drug_device: false
+  genetic: false
+  multicenter: false
+pi:
+  name: 林協霆
+  name_en: Hsieh-Ting Lin
+  dept: 腫瘤內科部／醫師
+  phone: 0920476278（院內分機1640）
+  email: htlin222@kfsyscc.org
+co_pi:
+  - name: 邱倫維
+    name_en: Lun-Wei Chiou
+    dept: 腫瘤內科部／醫師
+dates:
+  study_start: 2025年08月01日
+  study_end: 2026年05月31日
+  data_period: 2013年01月01日 至 2023年12月31日
+  irb_approval_date: 2025年07月20日
+subjects:
+  planned_n: 300
+  actual_n: 882
+  consent_waiver: true
+  vulnerable_population: false
+  groups:
+    - name: 早期G-CSF組（48-72小時內給予）
+      n: 118
+    - name: 非早期G-CSF組（>72小時給予）
+      n: 764
+    - name: 傾向分數配對後每組
+      n: 118
+phase: new
+closure:
+  extensions: 0
+  amendments: 0
+  sae_count: 0
+  specimens: false
+  data_safety:
+    deidentified: true
+    encrypted: true
+    retention_years: 7
+    authorized_personnel: 林協霆（計畫主持人）
+amendment:
+  change_description: ""
+  affects_consent: false
+  affects_risk: false
+continuing_review:
+  enrollment_status: ""
+  deviations: 0
+  extension_requested: false

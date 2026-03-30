@@ -1,0 +1,22 @@
+# Generated artifacts
+output/
+checklist.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# OS
+.DS_Store
+
+# Config with real data (template is tracked)
+# Uncomment if you don't want to track your filled config:
+# config.yml
+
+# Claude Code local settings
+.claude/settings.local.json
