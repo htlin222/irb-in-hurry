@@ -4,6 +4,7 @@ Required for new case submission. Max 2 pages.
 11 sections per KFSYSCC official template.
 """
 import os
+import re
 from scripts.docx_utils import (
     init_doc, add_p, add_header, add_footer,
     set_run_font, add_ct, apply_tb, set_cell_shading, check,
@@ -73,6 +74,17 @@ def generate_proposal_summary(config, output_dir):
     study_type_zh = _study_type_zh(config)
     data_period = config["dates"].get("data_period", "")
     planned_n = config["subjects"].get("planned_n", 0)
+    # Optional free-text content; each section falls back to the placeholder
+    prop = config.get("proposal") or {}
+
+    def _text(key, placeholder):
+        v = prop.get(key)
+        if isinstance(v, list):
+            return "\n".join(f"{i}. {x}" for i, x in enumerate(v, 1))
+        # YAML folded scalars join lines with spaces; drop them next to CJK
+        v = re.sub(r"\s*([\u3000-\u303f\u4e00-\u9fff\uff00-\uffef])\s*", r"\1",
+                   (v or "").strip())
+        return v or placeholder
 
     # Section 一、研究主題
     add_p(doc, "一、研究主題", True, 11, sa=Pt(4), sb=Pt(4))
@@ -80,12 +92,14 @@ def generate_proposal_summary(config, output_dir):
 
     # Section 二、研究背景
     add_p(doc, "二、研究背景", True, 11, sa=Pt(4), sb=Pt(4))
-    add_p(doc, "（請簡述疾病現況、自然病程、現有治療方式及預後，說明本研究之必要性。）",
+    add_p(doc, _text("background",
+                     "（請簡述疾病現況、自然病程、現有治療方式及預後，說明本研究之必要性。）"),
           size=10, sa=Pt(2))
 
     # Section 三、研究目的
     add_p(doc, "三、研究目的", True, 11, sa=Pt(4), sb=Pt(4))
-    add_p(doc, "（請說明主要研究目的及次要研究目的。）", size=10, sa=Pt(2))
+    add_p(doc, _text("objectives", "（請說明主要研究目的及次要研究目的。）"),
+          size=10, sa=Pt(2))
 
     # Section 四、執行期間
     add_p(doc, "四、執行期間", True, 11, sa=Pt(4), sb=Pt(4))
@@ -102,6 +116,8 @@ def generate_proposal_summary(config, output_dir):
         design_text += "\n本研究為非介入性研究，不涉及任何實驗性處置。"
     else:
         design_text += "。\n（請說明對照組、盲性、隨機分組等設計。）"
+    if prop.get("design"):
+        design_text += "\n" + _text("design", "")
     add_p(doc, design_text, size=10, sa=Pt(2))
 
     # Section 六、研究參與者
@@ -114,8 +130,8 @@ def generate_proposal_summary(config, output_dir):
             subj_text += f"\n  - {g['name']}"
             if g.get("n"):
                 subj_text += f"：{g['n']}人"
-    subj_text += "\n\n納入條件：（請列出）"
-    subj_text += "\n排除條件：（請列出）"
+    subj_text += "\n\n納入條件：" + _text("inclusion", "（請列出）")
+    subj_text += "\n排除條件：" + _text("exclusion", "（請列出）")
     if config["subjects"].get("consent_waiver"):
         subj_text += "\n\n受試者保護措施：本研究為回溯性病歷審查，經IRB核准免取得知情同意。所有資料均去識別化處理。"
     else:
@@ -126,11 +142,12 @@ def generate_proposal_summary(config, output_dir):
     add_p(doc, "七、研究方法", True, 11, sa=Pt(4), sb=Pt(4))
     if is_retro:
         add_p(doc, ("資料來源：和信治癌中心醫院電子病歷系統\n"
-                    "資料收集項目：（請列出收集之臨床變項）\n"
-                    "統計方法：（請說明使用之統計分析方法）"),
+                    "資料收集項目：" + _text("variables", "（請列出收集之臨床變項）") + "\n"
+                    "研究終點：" + _text("endpoints", "（請列出主要及次要研究終點）")),
               size=10, sa=Pt(2))
     else:
-        add_p(doc, "（請說明治療程序、劑量、臨床觀察、追蹤時程及療效評估。）",
+        add_p(doc, _text("methods",
+                         "（請說明治療程序、劑量、臨床觀察、追蹤時程及療效評估。）"),
               size=10, sa=Pt(2))
 
     # Section 八、不良事件處理
@@ -143,7 +160,7 @@ def generate_proposal_summary(config, output_dir):
 
     # Section 九、統計分析
     add_p(doc, "九、統計分析", True, 11, sa=Pt(4), sb=Pt(4))
-    add_p(doc, "（請說明統計分析計畫，包含期中分析（如適用）。）",
+    add_p(doc, _text("statistics", "（請說明統計分析計畫，包含期中分析（如適用）。）"),
           size=10, sa=Pt(2))
 
     # Section 十、資料保護及安全監測
@@ -164,7 +181,7 @@ def generate_proposal_summary(config, output_dir):
 
     # Section 十一、附件
     add_p(doc, "十一、附件", True, 11, sa=Pt(4), sb=Pt(4))
-    add_p(doc, "（如有相關附件，請列出。）", size=10, sa=Pt(2))
+    add_p(doc, _text("attachments", "（如有相關附件，請列出。）"), size=10, sa=Pt(2))
 
     # Footer note
     doc.add_paragraph()

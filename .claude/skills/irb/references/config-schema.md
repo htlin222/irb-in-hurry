@@ -65,6 +65,24 @@ Each entry:
 
 Each entry: `{ name: "Group name", n: 118 }`
 
+## `proposal` (optional)
+
+Free text for the 中文計畫摘要. Each key is optional; a missing key keeps the
+form's placeholder. Lists render as `1. … 2. …`. Whitespace next to CJK
+characters is removed, so YAML folded scalars (`>-`) are safe. Keep the whole
+summary within 2 pages. Full example: `tests/fixtures/example_tdxd_her2low.yml`.
+
+| Field | Section |
+|---|---|
+| `background` | 二、研究背景 |
+| `objectives` | 三、研究目的 (string or list) |
+| `design` | 五、研究設計 (appended after the generated sentence) |
+| `inclusion` / `exclusion` | 六、研究參與者 (string or list) |
+| `variables` / `endpoints` | 七、研究方法 (retrospective) |
+| `methods` | 七、研究方法 (prospective / trials) |
+| `statistics` | 九、統計分析 |
+| `attachments` | 十一、附件 (string or list) |
+
 ## `phase` (required)
 
 One of: `new`, `amendment`, `re_review`, `continuing`, `closure`, `sae`, `ib_update`, `import`, `suspension`, `appeal`

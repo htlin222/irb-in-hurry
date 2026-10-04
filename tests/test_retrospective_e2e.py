@@ -144,3 +144,23 @@ def test_config_validation():
     assert config["subjects"]["consent_waiver"] is True
     assert len(config["co_pi"]) == 1
     assert config["co_pi"][0]["name"] == "邱倫維"
+
+
+def test_proposal_summary_uses_config_text(output_dir):
+    """proposal.* text fills 中文計畫摘要; absent keys keep the placeholder."""
+    from docx import Document
+    from scripts.generators.proposal import generate_proposal_summary
+
+    config = load_config("tests/fixtures/example_tdxd_her2low.yml")
+    os.makedirs(output_dir, exist_ok=True)
+    text = "\n".join(p.text for p in Document(
+        generate_proposal_summary(config, output_dir)).paragraphs)
+    assert "DESTINY-Breast04" in text
+    assert "1. 主要目的" in text
+    assert "（請列出）" not in text
+    assert "標準。疾病" in text  # folded-line spaces removed
+
+    config.pop("proposal")
+    text = "\n".join(p.text for p in Document(
+        generate_proposal_summary(config, output_dir)).paragraphs)
+    assert "納入條件：（請列出）" in text
