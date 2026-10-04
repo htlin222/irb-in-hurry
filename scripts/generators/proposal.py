@@ -42,12 +42,7 @@ def generate_proposal_summary(config, output_dir):
     """
     doc = init_doc(11)
 
-    # Compact margins for 2-page limit
-    for s in doc.sections:
-        s.top_margin = Cm(2.0)
-        s.bottom_margin = Cm(2.0)
-        s.left_margin = Cm(2.5)
-        s.right_margin = Cm(2.5)
+    # Margins: official template uses 2 cm all round (applied by generate_all)
 
     # Title
     add_p(doc, "和信治癌中心醫院 人體試驗委員會", True, 13,

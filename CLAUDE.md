@@ -6,7 +6,8 @@ Automated KFSYSCC IRB document preparation system.
 
 ```bash
 # Edit config.yml with study details
-make all                          # Generate + PDF + dashboard
+make templates                    # Once: download official blank forms
+make all                          # Generate + PDF + layout gate + dashboard
 ```
 
 ## Conventions
@@ -17,6 +18,8 @@ make all                          # Generate + PDF + dashboard
 - **Config**: All study data in `config.yml`, never hardcoded
 - **Output**: DOCX → `output/`, PDF → `output/`, PNG previews → `output/preview/`
 - **Forms**: Named `IRB_SFXXX_中文名稱.docx`
+- **Page**: A4 + official per-form margins (`OFFICIAL_MARGINS` in docx_utils), applied by `generate_all`
+- **Layout gate**: `make validate` must show 0 errors before submission; PDF is the submission copy
 
 ## Project Structure
 
@@ -26,6 +29,8 @@ make all                          # Generate + PDF + dashboard
 - `scripts/generate_all.py` — Main orchestrator
 - `scripts/checklist.py` — ■/□ checklist generator
 - `scripts/convert.py` — DOCX→PDF→PNG pipeline
+- `scripts/fetch_templates.py` — Download official blank forms → `templates/official/`
+- `scripts/validate_layout.py` — Layout/font safety gate → `output/layout_report.md`
 - `.claude/skills/irb/` — Claude Code skill set
 
 ## Testing

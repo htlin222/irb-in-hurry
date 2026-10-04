@@ -83,7 +83,9 @@ make all
 
 | 指令 | 說明 |
 |------|------|
-| `make all` | 產生 DOCX + PDF + 儀表板 |
+| `make all` | 產生 DOCX + PDF + 排版檢查 + 儀表板 |
+| `make templates` | 下載官網官方空白表單（只需一次） |
+| `make validate` | 排版／字型安全檢查（A4、標楷體、Win/Mac 通用、對照官方空白表單） |
 | `make generate` | 僅產生 DOCX 表單 |
 | `make pdf` | 轉換為 PDF + PNG 預覽 |
 | `make dashboard` | 顯示送審狀態 |
@@ -101,12 +103,17 @@ make all
 config.yml → generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
+output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
+                                                 → output/layout_report.md
+                                                 → output/preview/compare/*.png
 ```
 
 1. **編輯 `config.yml`** — 填入研究基本資料（IRB 編號、計畫名稱、主持人、日期、研究類型）
 2. **`make all`** — 產生 DOCX、轉換 PDF、顯示儀表板
-3. **檢查預覽** — 確認 `output/preview/*.png` 排版正確
-4. **完成手動步驟** — 簽名、附上計畫書、email 至 irb@kfsyscc.org
+3. **排版安全檢查** — `make validate` 必須 0 錯誤；查看 `output/layout_report.md`
+   與 `output/preview/compare/*.png`（左：官方空白表單，右：產生結果）
+4. **以 PDF 交件** — 字型已嵌入，Windows 與 Mac 顯示一致；IRB 需修改時才附 DOCX
+5. **完成手動步驟** — 簽名、附上計畫書、email 至 irb@kfsyscc.org
 
 ### 設定檔結構
 
@@ -152,7 +159,7 @@ make test
 - Python 3.10+
 - [python-docx](https://python-docx.readthedocs.io/) — DOCX 產生
 - [PyYAML](https://pyyaml.org/) — 設定檔解析
-- [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF 轉換（`brew install --cask libreoffice`）
+- [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF 轉換（`brew install --cask libreoffice`；Windows：`winget install TheDocumentFoundation.LibreOffice`；Linux：`apt install libreoffice-writer fonts-arphic-ukai`）
 - [poppler](https://poppler.freedesktop.org/) — PDF→PNG 預覽（`brew install poppler`）
 
 ## 參考資料

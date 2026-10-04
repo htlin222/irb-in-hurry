@@ -2,43 +2,59 @@
 """DOCX → PDF → PNG preview pipeline.
 
 Requires:
-- LibreOffice (for DOCX→PDF): brew install --cask libreoffice
-- poppler (for PDF→PNG): brew install poppler
+- LibreOffice (for DOCX→PDF): brew install --cask libreoffice  (Windows: winget)
+- poppler (for PDF→PNG): brew install poppler  (Windows: conda/scoop poppler)
 """
 import os
 import sys
 import glob
+import shutil
 import subprocess
+
+
+SOFFICE_CANDIDATES = [
+    "/Applications/LibreOffice.app/Contents/MacOS/soffice",          # macOS
+    r"C:\Program Files\LibreOffice\program\soffice.exe",          # Windows
+    r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+]
+FONTS_CONF = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fonts.conf")
+
+
+def find_soffice():
+    """Locate LibreOffice on macOS / Windows / Linux. Returns path or None."""
+    for p in SOFFICE_CANDIDATES:
+        if os.path.exists(p):
+            return p
+    return shutil.which("soffice") or shutil.which("libreoffice")
+
+
+def soffice_env():
+    """On Linux, map 標楷體/DFKai-SB to an installed Kai font so renders keep metrics."""
+    env = dict(os.environ)
+    if sys.platform.startswith("linux") and os.path.exists(FONTS_CONF):
+        env["FONTCONFIG_FILE"] = FONTS_CONF
+    return env
 
 
 def docx_to_pdf(docx_path, output_dir):
     """Convert DOCX to PDF using LibreOffice headless."""
-    # Try common LibreOffice paths on macOS
-    soffice_paths = [
-        "/Applications/LibreOffice.app/Contents/MacOS/soffice",
-        "/usr/local/bin/soffice",
-        "soffice",
-    ]
-
-    soffice = None
-    for p in soffice_paths:
-        if os.path.exists(p) or p == "soffice":
-            soffice = p
-            break
-
+    soffice = find_soffice()
     if soffice is None:
-        print("⚠ LibreOffice not found. Install: brew install --cask libreoffice")
+        print("⚠ LibreOffice not found. Install: brew install --cask libreoffice "
+              "(macOS) / winget install TheDocumentFoundation.LibreOffice (Windows)")
         return None
 
     try:
         result = subprocess.run(
             [soffice, "--headless", "--convert-to", "pdf",
              "--outdir", output_dir, docx_path],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, timeout=120, env=soffice_env(),
         )
-        if result.returncode == 0:
-            basename = os.path.splitext(os.path.basename(docx_path))[0] + ".pdf"
-            return os.path.join(output_dir, basename)
+        pdf_path = os.path.join(
+            output_dir, os.path.splitext(os.path.basename(docx_path))[0] + ".pdf")
+        # soffice exits 0 even when it cannot load the file, so check the output exists
+        if result.returncode == 0 and os.path.exists(pdf_path):
+            return pdf_path
         else:
             print(f"  ✗ PDF conversion failed for {os.path.basename(docx_path)}: {result.stderr}")
             return None

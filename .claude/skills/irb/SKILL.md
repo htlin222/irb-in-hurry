@@ -40,7 +40,10 @@ When a user provides a study topic, proposal, or any text:
 3. **Confirm with user** -- Ask about any missing required fields (IRB number, exact dates)
 4. **Generate forms** -- `make all` → DOCX + PDF + PNG previews + dashboard
 5. **Run reviewer** -- `make review` → `reviewers/review_*.md`
-6. **Visual validation** -- Read `output/preview/*.png` to verify layout
+6. **Layout safety gate** -- `make validate` (part of `make all`; run `make templates` once first).
+   Must be 0 errors. Read `output/layout_report.md`, then view `output/preview/compare/*.png`
+   (official blank left, generated right) and report any visible drift to the user.
+   Remind the user to submit the PDF (fonts embedded → identical on Windows/Mac).
 7. **Fix findings** -- Address required revisions from reviewer
 8. **Update checklist** -- Track manual steps via `checklist.md`
 

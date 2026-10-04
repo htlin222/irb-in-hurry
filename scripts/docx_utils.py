@@ -3,9 +3,10 @@
 Extracted from irb-close/generate_forms.py, refactored to accept config dict.
 """
 import os
+import re
 import yaml
 from docx import Document
-from docx.shared import Pt, Cm
+from docx.shared import Pt, Cm, Twips
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn, nsdecls
@@ -23,13 +24,118 @@ def check(condition: bool) -> str:
     return "■" if condition else "□"
 
 
+# Official KFSYSCC blank forms: A4 portrait, L/R 2 cm, T/B 2.5 cm, header 1.5 cm.
+# (python-docx's default template is US Letter with 3.17 cm sides, which shifts
+# every line break and table width relative to the official form.)
+# Values are in twips, copied from the official templates' sectPr.
+PAGE_SETUP = {
+    "page_width": Twips(11906), "page_height": Twips(16838),
+    "left_margin": Twips(1134), "right_margin": Twips(1134),
+    "top_margin": Twips(1418), "bottom_margin": Twips(1418),
+    "header_distance": Twips(851), "footer_distance": Twips(992),
+}
+
+# Forms whose official blank uses other margins: (left, right, top, bottom) twips.
+# Extracted from the official templates (make templates); all others use PAGE_SETUP.
+OFFICIAL_MARGINS = {
+    "PROPOSAL": (1134, 1134, 1134, 1134),
+    "SF002": (1134, 1134, 1418, 1134),
+    "SF023": (1134, 1134, 1418, 1134),
+    "SF031": (1134, 1134, 1418, 1134),
+    "SF032": (1134, 1134, 1418, 567),
+    "SF047": (1134, 1134, 1418, 1134),
+    "SF062": (851, 851, 776, 800),
+    "SF063": (680, 737, 851, 1134),
+    "SF066": (1134, 1134, 1418, 851),
+    "SF067": (1134, 1134, 907, 284),
+    "SF068": (1134, 1134, 907, 1048),
+    "SF075": (680, 737, 851, 1134),
+    "SF079": (1134, 1134, 1418, 1134),
+    "SF080": (1134, 1134, 1418, 1134),
+    "SF082": (1134, 1134, 1418, 851),
+    "SF083": (1134, 1134, 1134, 1418),
+    "SF084": (1134, 1134, 1418, 851),
+    "SF085": (1134, 1134, 1134, 1418),
+    "SF090": (680, 737, 851, 1134),
+    "SF091": (851, 851, 851, 1134),
+    "SF092": (851, 851, 851, 1134),
+    "SF094": (1134, 1134, 1134, 1134),
+}
+_FORM_ID_RE = re.compile(r"SF\s*0*(\d{1,3})")
+
+
+def form_id_from_path(path):
+    """'SF002_KF-001.docx' → 'SF002'; '中文計畫摘要_proposal.docx' → 'PROPOSAL'."""
+    name = os.path.basename(path)
+    m = _FORM_ID_RE.search(name)
+    if m:
+        return f"SF{int(m.group(1)):03d}"
+    return "PROPOSAL" if "proposal" in name.lower() else None
+
+
+def official_margins(form_id):
+    """(left, right, top, bottom) in twips of the official blank form."""
+    if form_id in OFFICIAL_MARGINS:
+        return OFFICIAL_MARGINS[form_id]
+    return tuple(int(PAGE_SETUP[k].twips) for k in
+                 ("left_margin", "right_margin", "top_margin", "bottom_margin"))
+
+
+def apply_official_page_setup(path):
+    """Re-save a generated DOCX with A4 + the official margins of its form."""
+    doc = Document(path)
+    left, right, top, bottom = official_margins(form_id_from_path(path))
+    for section in doc.sections:
+        section.page_width, section.page_height = PAGE_SETUP["page_width"], PAGE_SETUP["page_height"]
+        section.left_margin, section.right_margin = Twips(left), Twips(right)
+        section.top_margin, section.bottom_margin = Twips(top), Twips(bottom)
+    doc.save(path)
+
+
+FORM_FONT = '標楷體'
+# fontTable entry Word itself writes for 標楷體. altName lets Word resolve the
+# font by its English name (DFKai-SB on Windows); macOS ships it as BiauKai
+# with the same localized name, so both platforms find the real Kai font.
+_FONT_TABLE_ENTRY = (
+    '<w:font w:name="標楷體"><w:altName w:val="DFKai-SB"/>'
+    '<w:panose1 w:val="03000509000000000000"/><w:charset w:val="88"/>'
+    '<w:family w:val="script"/><w:pitch w:val="fixed"/>'
+    '<w:sig w:usb0="00000003" w:usb1="080E0000" w:usb2="00000016" w:usb3="00000000"'
+    ' w:csb0="00100001" w:csb1="00000000"/></w:font>'
+)
+
+
+def _apply_cross_platform_defaults(doc):
+    """Pin page setup, fonts and language so Word (Win/Mac) and LibreOffice agree."""
+    for section in doc.sections:
+        for attr, value in PAGE_SETUP.items():
+            setattr(section, attr, value)
+
+    # docDefaults: replace theme fonts (which resolve to Calibri/MS 明朝 on an
+    # en-US theme) with explicit 標楷體, and tag text as Traditional Chinese.
+    rpr_default = doc.styles.element.find(qn('w:docDefaults')).find(qn('w:rPrDefault')).find(qn('w:rPr'))
+    fonts = rpr_default.find(qn('w:rFonts'))
+    for a in ('w:asciiTheme', 'w:hAnsiTheme', 'w:eastAsiaTheme', 'w:cstheme'):
+        fonts.attrib.pop(qn(a), None)
+    for a in ('w:ascii', 'w:hAnsi', 'w:eastAsia', 'w:cs'):
+        fonts.set(qn(a), FORM_FONT)
+    lang = rpr_default.find(qn('w:lang'))
+    lang.set(qn('w:eastAsia'), 'zh-TW')
+
+    for part in doc.part.package.iter_parts():
+        if str(part.partname) == '/word/fontTable.xml' and FORM_FONT.encode() not in part.blob:
+            part._blob = part.blob.replace(
+                b'</w:fonts>', _FONT_TABLE_ENTRY.encode('utf-8') + b'</w:fonts>')
+
+
 def init_doc(sz=12):
-    """Create a new Document with 標楷體 default font."""
+    """Create a new A4 Document with 標楷體 default font."""
     doc = Document()
+    _apply_cross_platform_defaults(doc)
     s = doc.styles['Normal']
-    s.font.name = '標楷體'
+    s.font.name = FORM_FONT
     s.font.size = Pt(sz)
-    s.element.rPr.rFonts.set(qn('w:eastAsia'), '標楷體')
+    s.element.rPr.rFonts.set(qn('w:eastAsia'), FORM_FONT)
     return doc
 
 

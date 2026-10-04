@@ -83,7 +83,9 @@ make all
 
 | Command | Description |
 |---------|-------------|
-| `make all` | Generate DOCX + PDF + dashboard |
+| `make all` | Generate DOCX + PDF + layout check + dashboard |
+| `make templates` | Download official blank forms from kfsyscc.org (once) |
+| `make validate` | Layout/font safety gate (A4, 標楷體, Win/Mac, vs official blank) |
 | `make generate` | Generate DOCX forms only |
 | `make pdf` | Convert DOCX to PDF + PNG previews |
 | `make dashboard` | Show submission status |
@@ -101,12 +103,18 @@ make all
 config.yml → generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
+output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
+                                                 → output/layout_report.md
+                                                 → output/preview/compare/*.png
 ```
 
 1. **Edit `config.yml`** — Fill in study metadata (IRB number, titles, PI info, dates, study type)
 2. **`make all`** — Generates DOCX forms, converts to PDF, shows dashboard
-3. **Review previews** — Check `output/preview/*.png` for visual validation
-4. **Complete manual steps** — Sign forms, attach protocol, email to irb@kfsyscc.org
+3. **Layout gate** — `make validate` must report 0 errors; open `output/layout_report.md`
+   and `output/preview/compare/*.png` (official blank left, generated right)
+4. **Submit the PDF** — fonts are embedded, so it looks identical on Windows and Mac;
+   send the DOCX only if the IRB asks to edit it
+5. **Complete manual steps** — Sign forms, attach protocol, email to irb@kfsyscc.org
 
 ### Config Schema
 
@@ -147,14 +155,14 @@ See [config-schema reference](.claude/skills/irb/references/config-schema.md) fo
 make test
 ```
 
-15 tests covering form selection logic, DOCX content verification, checklist generation, and end-to-end generation for both new case and closure phases.
+27 tests covering form selection logic, DOCX content verification, checklist generation, end-to-end generation for both new case and closure phases, and the layout safety gate.
 
 ## Dependencies
 
 - Python 3.10+
 - [python-docx](https://python-docx.readthedocs.io/) — DOCX generation
 - [PyYAML](https://pyyaml.org/) — Config parsing
-- [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF conversion (`brew install --cask libreoffice`)
+- [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF conversion (`brew install --cask libreoffice`; Windows: `winget install TheDocumentFoundation.LibreOffice`; Linux: `apt install libreoffice-writer fonts-arphic-ukai`)
 - [poppler](https://poppler.freedesktop.org/) — PDF→PNG preview (`brew install poppler`)
 
 ## Claude Code Integration
@@ -179,6 +187,8 @@ irb-in-hurry/
 │   ├── generate_all.py        # Main orchestrator
 │   ├── checklist.py           # ■/□ checklist generator
 │   ├── convert.py             # DOCX→PDF→PNG pipeline
+│   ├── fetch_templates.py     # Download official blank forms
+│   ├── validate_layout.py     # Layout/font safety gate
 │   └── generators/            # One module per IRB category
 │       ├── new_case.py        # SF001, SF002, SF094, SF011, SF022
 │       ├── consent.py         # SF003-005, SF062, SF063, SF075, SF090-092
