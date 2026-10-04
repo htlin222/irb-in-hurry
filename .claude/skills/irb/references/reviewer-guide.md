@@ -105,7 +105,7 @@ All of these must be true:
 3. ■ No identifiable data that could cause harm if disclosed
 4. ■ No vulnerable populations (or adequate safeguards)
 
-**Expedited categories that apply to KFSYSCC research**:
+**Expedited categories that commonly apply (KFSYSCC example)**:
 - ■ Retrospective chart review (existing records)
 - ■ Non-invasive specimen collection (blood draw within limits)
 - ■ Survey/interview with no sensitive topics
@@ -183,7 +183,7 @@ For KFSYSCC retrospective chart reviews, verify ALL four criteria (45 CFR 46.116
 
 ---
 
-## Common Mistakes in KFSYSCC Submissions
+## Common Mistakes in Submissions (KFSYSCC experience)
 
 Based on institutional experience:
 

@@ -1,4 +1,4 @@
-"""Suspension/early termination form generators for KFSYSCC IRB.
+"""Suspension/early termination form generators (KFSYSCC form pack).
 
 Generates SF047, SF048 forms from config dict.
 """
@@ -20,7 +20,7 @@ def generate_sf047(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "計畫暫停/提前終止審查送審資料表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -85,7 +85,7 @@ def generate_sf048(config, output_dir):
     subjects = config["subjects"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "計畫暫停/提前終止報告書", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))

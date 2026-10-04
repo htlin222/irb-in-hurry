@@ -38,6 +38,7 @@ print(f'TITLE=\"{c[\"study\"][\"title_zh\"][:40]}\"')
 print(f'PI=\"{c[\"pi\"][\"name\"]}\"')
 print(f'STUDY_TYPE=\"{c[\"study\"][\"type\"]}\"')
 print(f'REVIEW_TYPE=\"{c[\"study\"][\"review_type\"]}\"')
+print(f'INSTITUTION=\"{(c.get(\"institution\") or \"kfsyscc\").upper()}\"')
 " 2>/dev/null)" || {
     echo "⚠ Could not parse $CONFIG"
     exit 1
@@ -58,7 +59,7 @@ PHASE_ZH="${PHASE_NAMES[$PHASE]:-$PHASE}"
 
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}║     ${CYAN}KFSYSCC IRB Submission Dashboard${NC}${BOLD}          ║${NC}"
+echo -e "${BOLD}║     ${CYAN}${INSTITUTION} IRB Submission Dashboard${NC}"
 echo -e "${BOLD}╠══════════════════════════════════════════════╣${NC}"
 echo -e "${BOLD}║${NC} IRB No:     ${GREEN}${IRB_NO}${NC}"
 echo -e "${BOLD}║${NC} Phase:      ${CYAN}${PHASE_ZH}${NC} (${PHASE})"

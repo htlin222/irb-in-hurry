@@ -6,6 +6,17 @@ description: Complete reference for all config.yml fields used by IRB form gener
 # Config Schema Reference
 
 All study data lives in `config.yml`. Generators read from this file; nothing is hardcoded.
+Institution facts (committee name, IRB-number label, submission address, page,
+font) are **not** config: they live in `institutions/<id>/profile.yml`.
+
+## `institution`
+
+| Field | Type | Description | Example |
+|---|---|---|---|
+| `institution` | string | Folder under `institutions/` whose profile + form pack to use (default `kfsyscc`; `IRB_INSTITUTION` env overrides) | `kfsyscc` |
+
+When onboarding a new institution needs a field that isn't listed here, add it
+under the matching section below and document it in this file.
 
 ## `study` (required)
 

@@ -1,5 +1,9 @@
 # Brainstorm: Clinical Research Ideas at KFSYSCC
 
+> Institution-specific example: tailored to KFSYSCC (the reference pack). For
+> another institution, keep the templates and limitations, and swap in that
+> site's strengths and patient volume.
+
 ## When to Use
 
 When a user says they want to do research but doesn't have a specific topic, or wants to explore ideas. Use this reference to suggest study topics tailored to KFSYSCC's strengths.

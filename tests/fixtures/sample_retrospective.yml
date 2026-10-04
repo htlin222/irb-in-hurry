@@ -1,6 +1,8 @@
 # Test fixture: G-CSF retrospective study from irb-close (IRB 20250801A)
 # This tests both new case and closure flows
 
+institution: kfsyscc        # institutions/<id>/profile.yml
+
 study:
   irb_no: "20250801A"
   project_no: "不適用"

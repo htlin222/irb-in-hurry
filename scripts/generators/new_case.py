@@ -1,6 +1,6 @@
 """New case submission form generators: SF001, SF002, SF094, SF011, SF022.
 
-Generates DOCX forms for new IRB case submission at KFSYSCC.
+Generates DOCX forms for new IRB case submission (KFSYSCC form pack).
 """
 
 import os
@@ -20,7 +20,7 @@ def generate_sf001(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title block
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會",
+    add_p(doc, institution().heading,
           bold=True, size=14, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(2))
     add_p(doc, "新案審查送審資料表",
           bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -50,7 +50,7 @@ def generate_sf001(config, output_dir):
 
     # Checklist items: (備妥, 藥品/非藥品, 資料項目, 備註)
     items = [
-        ("■", "※", "送審文件電子檔", "email至irb@kfsyscc.org"),
+        ("■", "※", "送審文件電子檔", f"email至{institution().submission_email}"),
         ("■", "※", "送審資料表及文件繳交完成簽收表", ""),
         ("■", "※", "新案申請書（主持人簽名及日期）", "IRB.SF002"),
         ("■", "※", "中文計畫摘要", ""),
@@ -103,7 +103,7 @@ def generate_sf002(config, output_dir):
     consent_waiver = subjects.get("consent_waiver", False)
 
     # Title block
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會",
+    add_p(doc, institution().heading,
           bold=True, size=14, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(2))
     add_p(doc, "研究計畫申請書",
           bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -115,7 +115,7 @@ def generate_sf002(config, output_dir):
     tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
 
     # IRB 編號
-    add_ct(tbl.rows[0].cells[0], "KFSYSCC-IRB編號", bold=True, size=11)
+    add_ct(tbl.rows[0].cells[0], institution().irb_no_label, bold=True, size=11)
     add_ct(tbl.rows[0].cells[1], study["irb_no"], size=11)
 
     # 計畫編號
@@ -293,7 +293,7 @@ def generate_sf094(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title block
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會",
+    add_p(doc, institution().heading,
           bold=True, size=14, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(2))
     add_p(doc, "臨床研究人員顯著財務利益申報表",
           bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -352,7 +352,7 @@ def generate_sf011(config, output_dir):
     """Generate SF011: placeholder clinical trial permit form."""
     doc = init_doc(sz=12)
 
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會",
+    add_p(doc, institution().heading,
           bold=True, size=14, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(2))
     add_p(doc, "臨床試驗／研究許可證明",
           bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -375,7 +375,7 @@ def generate_sf022(config, output_dir):
     """Generate SF022: placeholder data safety monitoring plan form."""
     doc = init_doc(sz=12)
 
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會",
+    add_p(doc, institution().heading,
           bold=True, size=14, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(2))
     add_p(doc, "資料及安全性監測計畫",
           bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))

@@ -3,18 +3,19 @@
 
 For every DOCX in output/ it checks:
 
-  1. Page setup   — A4 portrait, margins match the official blank form
-  2. Fonts        — every CJK run resolves to 標楷體 (no theme / fallback fonts),
-                    language tagged zh-TW, 標楷體 declared in fontTable with
-                    altName DFKai-SB (so Word for Windows *and* Mac find it)
-  3. Glyphs       — no characters outside Big5/CP950 (標楷體 lacks them, so Word
-                    on Win/Mac would silently substitute different fonts)
+  1. Page setup   — paper size + margins match the official blank form
+  2. Fonts        — every CJK run resolves to the profile's form font (no theme /
+                    fallback fonts), language tagged, font declared in fontTable
+                    with its altName (so Word for Windows *and* Mac find it)
+  3. Glyphs       — no characters outside the font's encoding (e.g. Big5 for
+                    標楷體), which Word on Win/Mac would silently substitute
   4. Template     — official wording (labels) of the blank form still present
   5. Render       — (LibreOffice) PDF fonts all embedded, page count does not
                     overflow the blank form, side-by-side preview PNG for eyeballing
 
 Errors exit non-zero so `make all` stops before anything unsafe is sent.
-Official blank forms come from `make templates` (scripts/fetch_templates.py).
+Paper, margins, font and the blank forms all come from the active institution
+profile (institutions/<id>/profile.yml); blanks are cached by `make templates`.
 
 Usage: uv run python scripts/validate_layout.py [output_dir] [--no-render] [--strict]
 """
@@ -34,18 +35,12 @@ from docx.oxml.ns import qn
 
 from scripts.convert import docx_to_pdf, find_soffice
 from scripts.docx_utils import form_id_from_path, official_margins
+from scripts.institution import current
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TEMPLATE_DIR = os.path.join(ROOT, "templates", "official")
-
-FORM_FONT = "標楷體"
-FORM_FONT_ALIASES = {"標楷體", "DFKai-SB", "BiauKai"}
-A4 = (11906, 16838)            # twips
 PAGE_TOL = 60                  # ~1 mm
 MARGIN_TOL = 115               # ~2 mm
 LABEL_COVERAGE_WARN = 0.5
-# Forms allowed to be longer than their blank (KFSYSCC: 中文計畫摘要 ≤ 2 pages)
-MAX_PAGES = {"PROPOSAL": 2}
 
 CJK_RE = re.compile(r"[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef\u3000-\u303f]")
 MARGIN_KEYS = ("left", "right", "top", "bottom")
@@ -162,14 +157,14 @@ def check_page(doc, tpl_doc, fid, rep):
     if g["orient"] == "landscape" or (g["width"] and g["height"] and g["width"] > g["height"]):
         rep.warn("頁面為橫向 (landscape)")
     size = (g["width"], g["height"])
-    ref_size = A4
+    ref_size = (current().page["width"], current().page["height"])
     ref_margins = dict(zip(MARGIN_KEYS, official_margins(fid)))
     if tpl_doc is not None:
         t = page_setup(tpl_doc)
         ref_size = (t["width"], t["height"])
         ref_margins = {k: t[k] for k in MARGIN_KEYS}
     if any(v is None for v in size) or any(abs(a - b) > PAGE_TOL for a, b in zip(sorted(size), sorted(ref_size))):
-        rep.error(f"紙張大小 {fmt_cm(size)} ≠ 官方表單 {fmt_cm(ref_size)}（A4 才不會在 Win/Mac 列印時縮放跑版）")
+        rep.error(f"紙張大小 {fmt_cm(size)} ≠ 官方表單 {fmt_cm(ref_size)}（紙張不符會在 Win/Mac 列印時縮放跑版）")
     off = [f"{k} {g[k] / 567:.2f}→{ref_margins[k] / 567:.2f}cm" for k in MARGIN_KEYS
            if g[k] is None or ref_margins[k] is None or abs(g[k] - ref_margins[k]) > MARGIN_TOL]
     if off:
@@ -182,6 +177,7 @@ def fmt_cm(size):
 
 def check_fonts(doc, rep):
     res = FontResolver(doc)
+    font = current().font
     bad_cjk, bad_latin = {}, {}
     elements = [doc.element.body] + [hf._element for s in doc.sections
                                      for hf in (s.header, s.footer) if not hf.is_linked_to_previous]
@@ -192,42 +188,49 @@ def check_fonts(doc, rep):
                 continue
             if CJK_RE.search(text):
                 f = res.resolve(r, "eastAsia")
-                if f not in FORM_FONT_ALIASES:
+                if f not in current().font_aliases:
                     bad_cjk.setdefault(f, text.strip()[:20])
             if re.search(r"[A-Za-z0-9]", text):
                 f = res.resolve(r, "ascii")
                 if f.startswith("theme:") or f.startswith("("):
                     bad_latin.setdefault(f, text.strip()[:20])
     for f, sample in bad_cjk.items():
-        rep.error(f"中文字型為「{f}」而非標楷體（例：「{sample}」）— Win/Mac 會顯示不同字型")
+        rep.error(f"中文字型為「{f}」而非{font['name']}（例：「{sample}」）— Win/Mac 會顯示不同字型")
     for f, sample in bad_latin.items():
         rep.warn(f"英數字型依賴佈景主題「{f}」（例：「{sample}」）— Win/Mac 預設不同")
 
     dd_lang = doc.styles.element.find(qn("w:docDefaults"))
     lang = dd_lang.find(".//" + qn("w:lang")) if dd_lang is not None else None
-    if lang is None or lang.get(qn("w:eastAsia")) != "zh-TW":
-        rep.warn("文件東亞語言未設為 zh-TW — 標點擠壓/斷行規則在 Win/Mac 可能不同")
+    want_lang = font.get("lang", "zh-TW")
+    if lang is None or lang.get(qn("w:eastAsia")) != want_lang:
+        rep.warn(f"文件東亞語言未設為 {want_lang} — 標點擠壓/斷行規則在 Win/Mac 可能不同")
 
     font_table = next((p for p in doc.part.package.iter_parts()
                        if str(p.partname) == "/word/fontTable.xml"), None)
     blob = font_table.blob.decode("utf-8", "replace") if font_table is not None else ""
-    if f'w:name="{FORM_FONT}"' not in blob:
-        rep.warn("fontTable 未宣告標楷體 — 缺字型時 Word 無替代提示")
-    elif "DFKai-SB" not in blob:
-        rep.warn("fontTable 的標楷體缺 altName DFKai-SB — Mac/英文版 Word 可能找不到")
+    alt = (font.get("aliases") or [None])[0]
+    if f'w:name="{font["name"]}"' not in blob:
+        rep.warn(f"fontTable 未宣告{font['name']} — 缺字型時 Word 無替代提示")
+    elif alt and alt not in blob:
+        rep.warn(f"fontTable 的{font['name']}缺 altName {alt} — Mac/英文版 Word 可能找不到")
 
 
 def check_glyphs(text, rep):
-    odd = sorted({c for c in text if ord(c) > 127 and not _in_big5(c)})
+    font = current().font
+    enc = font.get("encoding")
+    if not enc:
+        return
+    odd = sorted({c for c in text if ord(c) > 127 and not _in_encoding(c, enc)})
     if odd:
         sample = "".join(odd[:15])
-        rep.warn(f"{len(odd)} 個字元超出 Big5（舊版標楷體可能缺字，Win/Mac 會各自補字型）："
+        label = "Big5" if enc.lower() in ("cp950", "big5") else enc
+        rep.warn(f"{len(odd)} 個字元超出 {label}（{font['name']}可能缺字，Win/Mac 會各自補字型）："
                  f"{sample} — 請在 PDF 確認字體一致")
 
 
-def _in_big5(ch):
+def _in_encoding(ch, enc):
     try:
-        ch.encode("cp950")
+        ch.encode(enc)
         return True
     except UnicodeEncodeError:
         return False
@@ -296,9 +299,9 @@ def pdf_fonts(pdf):
 
 
 def template_pdf(fid):
-    pdf_dir = os.path.join(TEMPLATE_DIR, "pdf")
+    pdf_dir = os.path.join(current().template_dir, "pdf")
     pdf = os.path.join(pdf_dir, f"{fid}.pdf")
-    src = os.path.join(TEMPLATE_DIR, f"{fid}.docx")
+    src = current().blank_path(fid)
     if not os.path.exists(pdf) and os.path.exists(src):
         os.makedirs(pdf_dir, exist_ok=True)
         docx_to_pdf(src, pdf_dir)
@@ -317,12 +320,12 @@ def check_render(docx_path, fid, tmp_dir, compare_dir, rep):
             rep.error("PDF 有未嵌入字型：" + "、".join(not_emb) + "（對方電腦會換字型）")
         fallback = sorted({n for n, _ in fonts if any(h.lower() in n.lower() for h in FALLBACK_FONT_HINTS)})
         if fallback:
-            rep.warn("轉檔時字型被替換為：" + "、".join(fallback) + "（本機沒有標楷體 → 預覽排版不準）")
+            rep.warn("轉檔時字型被替換為：" + "、".join(fallback) + "（本機沒有" + current().font["name"] + " → 預覽排版不準）")
     pages = pdf_pages(pdf)
     tpl_pdf = template_pdf(fid) if fid else None
     tpl_pages = pdf_pages(tpl_pdf) if tpl_pdf else None
     if pages and tpl_pages:
-        limit = max(tpl_pages, MAX_PAGES.get(fid, 0))
+        limit = max(tpl_pages, current().templates.get("max_pages", {}).get(fid, 0))
         if pages > limit:
             rep.warn(f"頁數 {pages} > 官方空白表單 {tpl_pages} 頁 — 確認沒有表格被擠到下一頁")
         else:
@@ -362,7 +365,7 @@ def side_by_side(tpl_pdf, gen_pdf, out_png, dpi=80):
 def load_template(fid):
     if not fid:
         return None
-    path = os.path.join(TEMPLATE_DIR, f"{fid}.docx")
+    path = current().blank_path(fid)
     if not os.path.exists(path):
         return None
     try:
@@ -381,7 +384,7 @@ def validate_file(path, render=False, tmp_dir=None, compare_dir=None):
     fid = form_id_from_path(path)
     tpl = load_template(fid)
     if fid and tpl is None:
-        rep.note("無官方空白表單快取（執行 make templates）— 僅檢查 A4/字型")
+        rep.note("無官方空白表單快取（執行 make templates）— 僅檢查紙張/字型")
     check_page(doc, tpl, fid, rep)
     check_fonts(doc, rep)
     check_glyphs(all_text(doc), rep)
@@ -409,7 +412,7 @@ def write_markdown(reports, path, render):
     lines += ["", "## 送件前人工確認", "",
               "- □ 開啟 `preview/compare/*.png`，左右比對表格框線、欄寬、標題位置",
               "- □ 交件以 **PDF**（字型已嵌入）為準；DOCX 僅供 IRB 需要修改時使用",
-              "- □ 若對方要 DOCX：在 Windows Word 與 Mac Word 各開一次，確認字型顯示為標楷體",
+              "- □ 若對方要 DOCX：在 Windows Word 與 Mac Word 各開一次，確認字型顯示為" + current().font["name"],
               ""]
     if not render:
         lines.insert(4, "> 本次未進行 PDF 轉檔檢查（--no-render 或缺 LibreOffice）\n")
@@ -425,7 +428,7 @@ def main(output_dir="output", render=True, strict=False):
     if render and not find_soffice():
         print("⚠ LibreOffice not found — skipping render checks (PDF fonts, page count)")
         render = False
-    if not os.path.exists(os.path.join(TEMPLATE_DIR, "index.json")):
+    if not os.path.exists(os.path.join(current().template_dir, "index.json")):
         print("⚠ Official blank forms not cached — run `make templates` for template comparison")
 
     compare_dir = os.path.join(output_dir, "preview", "compare")

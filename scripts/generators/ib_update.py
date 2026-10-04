@@ -1,4 +1,4 @@
-"""IB update and multi-center letter generators for KFSYSCC IRB.
+"""IB update and multi-center letter generators (KFSYSCC form pack).
 
 Generates SF082, SF083, SF084, SF085 forms from config dict.
 SF082/SF083: 更新主持人手冊 (Investigator's Brochure update)
@@ -22,7 +22,7 @@ def generate_sf082(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=14,
+    add_p(doc, institution().heading, bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "更新主持人手冊審查送審資料表", bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -37,7 +37,7 @@ def generate_sf082(config, output_dir):
     # Checklist table: 5 columns
     cols = ["備妥", "藥品/非藥品", "資料項目", "備註", "IRB檢核"]
     items = [
-        ("■", "※", "送審文件電子檔", "email至irb@kfsyscc.org"),
+        ("■", "※", "送審文件電子檔", f"email至{institution().submission_email}"),
         ("■", "※", "送審資料表及文件繳交完成簽收表", ""),
         ("■", "※", "更新主持人手冊申請表（主持人簽名）", "IRB.SF083"),
         ("■", "※", "更新之主持人手冊", ""),
@@ -87,7 +87,7 @@ def generate_sf083(config, output_dir):
     pi = config["pi"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=14,
+    add_p(doc, institution().heading, bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "更新主持人手冊申請表", bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -168,7 +168,7 @@ def generate_sf084(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=14,
+    add_p(doc, institution().heading, bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "多中心信函審查送審資料表", bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -183,7 +183,7 @@ def generate_sf084(config, output_dir):
     # Checklist table: 5 columns
     cols = ["備妥", "藥品/非藥品", "資料項目", "備註", "IRB檢核"]
     items = [
-        ("■", "※", "送審文件電子檔", "email至irb@kfsyscc.org"),
+        ("■", "※", "送審文件電子檔", f"email至{institution().submission_email}"),
         ("■", "※", "送審資料表及文件繳交完成簽收表", ""),
         ("■", "※", "多中心/通知函申請表（主持人簽名）", "IRB.SF085"),
         ("■", "※", "多中心信函/通知函原件", ""),
@@ -232,7 +232,7 @@ def generate_sf085(config, output_dir):
     pi = config["pi"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=14,
+    add_p(doc, institution().heading, bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "多中心信函申請表", bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))

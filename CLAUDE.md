@@ -1,37 +1,51 @@
 # IRB-in-Hurry
 
-Automated KFSYSCC IRB document preparation system.
+Institution-agnostic IRB form pipeline: study facts (`config.yml`) + an
+institution profile (`institutions/<id>/`) → that institution's official DOCX
+forms → PDF → layout gate. KFSYSCC is the reference pack (`institutions/kfsyscc/`).
+Method: `docs/METHODOLOGY.md` · Fork guide: `docs/ONBOARDING.md`.
 
 ## Quick Start
 
 ```bash
-# Edit config.yml with study details
-make templates                    # Once: download official blank forms
+# Edit config.yml with study details (institution: <id>)
+make templates                    # Once: cache the institution's blank forms
 make all                          # Generate + PDF + layout gate + dashboard
+make onboard INST=<id>            # New institution: blanks in templates/<id>/ → draft pack
 ```
 
 ## Conventions
 
 - **Python**: Managed by `uv` (pyproject.toml), run via `uv run` or `make`
-- **Font**: 標楷體 (DFKai-SB) for all form text
-- **Checkbox**: ■ (U+25A0) = checked, □ (U+25A1) = unchecked
-- **Config**: All study data in `config.yml`, never hardcoded
+- **Three kinds of data, never mixed**:
+  - study facts → `config.yml`
+  - institution facts (names, IRB-no label, submission address, page, margins, font, blank locations) → `institutions/<id>/profile.yml`
+  - form list + routing → `institutions/<id>/forms.py`
+- **No institution literals in code**: generators read `institution()` (`scripts.docx_utils`); shared scripts read `scripts.institution.current()`
+- **Active institution**: `IRB_INSTITUTION` env → `institution:` in config.yml → `kfsyscc`
+- **Generators**: prefer `template_fill.blank_generator` (fill the official blank); rebuild with python-docx only when a blank can't be filled
+- **Font**: the profile's `font` (KFSYSCC: 標楷體 / DFKai-SB); no theme fonts (`pin_form_font`)
+- **Checkbox**: ■ (U+25A0) = checked, □ (U+25A1) = unchecked, via `check()`
 - **Output**: DOCX → `output/`, PDF → `output/`, PNG previews → `output/preview/`
-- **Forms**: Named `IRB_SFXXX_中文名稱.docx`
-- **Page**: A4 + official per-form margins (`OFFICIAL_MARGINS` in docx_utils), applied by `generate_all`
+- **Page**: profile page size + per-form margins, applied by `generate_all`
+- **Blanks**: `templates/<id>/` (gitignored), the gate's ground truth, never edited
 - **Layout gate**: `make validate` must show 0 errors before submission; PDF is the submission copy
 
 ## Project Structure
 
-- `scripts/docx_utils.py` — Shared DOCX helper functions
-- `scripts/form_selector.py` — Phase + study type → required forms
-- `scripts/generators/` — One module per IRB category
+- `institutions/<id>/` — profile.yml, forms.py, form_inventory.md (one folder per committee)
+- `scripts/institution.py` — Active profile loader
+- `scripts/template_fill.py` — Generic fill-the-blank generator (labels → values, □ → ■)
+- `scripts/onboard.py` — Blank forms → draft profile + forms.py + inventory
+- `scripts/docx_utils.py` — Shared DOCX helpers (profile-aware)
+- `scripts/form_selector.py` — Phase + study type → required forms (active pack)
+- `scripts/generators/` — KFSYSCC rebuild generators (reference pack)
 - `scripts/generate_all.py` — Main orchestrator
 - `scripts/checklist.py` — ■/□ checklist generator
 - `scripts/convert.py` — DOCX→PDF→PNG pipeline
-- `scripts/fetch_templates.py` — Download official blank forms → `templates/official/`
+- `scripts/fetch_templates.py` — Scrape or index official blanks → `templates/<id>/`
 - `scripts/validate_layout.py` — Layout/font safety gate → `output/layout_report.md`
-- `.claude/skills/irb/` — Claude Code skill set
+- `.claude/skills/irb/` — Claude Code skill set (onboarding: `references/onboard-institution.md`)
 
 ## Testing
 

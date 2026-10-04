@@ -1,4 +1,4 @@
-"""Generate 中文計畫摘要 (Chinese Project Summary) for KFSYSCC IRB.
+"""Generate 中文計畫摘要 (Chinese Project Summary) (KFSYSCC form pack).
 
 Required for new case submission. Max 2 pages.
 11 sections per KFSYSCC official template.
@@ -7,7 +7,7 @@ import os
 import re
 from scripts.docx_utils import (
     init_doc, add_p, add_header, add_footer,
-    set_run_font, add_ct, apply_tb, set_cell_shading, check,
+    set_run_font, add_ct, apply_tb, set_cell_shading, check, institution,
 )
 from docx.shared import Pt, Cm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -46,7 +46,7 @@ def generate_proposal_summary(config, output_dir):
     # Margins: official template uses 2 cm all round (applied by generate_all)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", True, 13,
+    add_p(doc, institution().heading, True, 13,
           WD_ALIGN_PARAGRAPH.CENTER, Pt(2))
     add_p(doc, "中文計畫摘要", True, 15,
           WD_ALIGN_PARAGRAPH.CENTER, Pt(8))
@@ -54,7 +54,7 @@ def generate_proposal_summary(config, output_dir):
     # Header info table
     tbl = doc.add_table(rows=3, cols=2)
     tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
-    add_ct(tbl.rows[0].cells[0], "KFSYSCC-IRB編號", True, 10)
+    add_ct(tbl.rows[0].cells[0], institution().irb_no_label, True, 10)
     add_ct(tbl.rows[0].cells[1], config["study"]["irb_no"] or "（待核發）", size=10)
     add_ct(tbl.rows[1].cells[0], "計畫名稱", True, 10)
     add_ct(tbl.rows[1].cells[1], config["study"]["title_zh"], size=10)
@@ -141,7 +141,7 @@ def generate_proposal_summary(config, output_dir):
     # Section 七、研究方法
     add_p(doc, "七、研究方法", True, 11, sa=Pt(4), sb=Pt(4))
     if is_retro:
-        add_p(doc, ("資料來源：和信治癌中心醫院電子病歷系統\n"
+        add_p(doc, (f"資料來源：{institution().ehr_name}\n"
                     "資料收集項目：" + _text("variables", "（請列出收集之臨床變項）") + "\n"
                     "研究終點：" + _text("endpoints", "（請列出主要及次要研究終點）")),
               size=10, sa=Pt(2))

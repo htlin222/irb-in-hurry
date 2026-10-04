@@ -1,4 +1,4 @@
-.PHONY: help setup generate pdf preview dashboard checklist review clean test all templates validate
+.PHONY: help setup generate pdf preview dashboard checklist review clean test all templates validate onboard
 
 CONFIG := config.yml
 OUTPUT := output
@@ -16,10 +16,14 @@ generate: ## Generate DOCX forms from config.yml
 pdf: ## Convert DOCX → PDF + PNG previews
 	$(RUN) python scripts/convert.py $(OUTPUT)
 
-templates: ## Download official blank forms (for layout comparison)
+templates: ## Cache the institution's official blank forms (for layout comparison)
 	$(RUN) python scripts/fetch_templates.py
 
-validate: ## Layout/font safety gate vs official blank forms (Win/Mac)
+onboard: ## Draft a new institution from blanks in templates/$(INST)/  (make onboard INST=myhosp)
+	@test -n "$(INST)" || (echo "usage: make onboard INST=<id>  (blanks in templates/<id>/)"; exit 2)
+	$(RUN) python scripts/onboard.py $(INST)
+
+validate: ## Layout/font safety gate vs the institution's blank forms (Win/Mac)
 	$(RUN) python scripts/validate_layout.py $(OUTPUT)
 
 all: generate pdf validate dashboard ## Generate + convert + validate + dashboard

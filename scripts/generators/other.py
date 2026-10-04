@@ -1,4 +1,4 @@
-"""Miscellaneous form generators for KFSYSCC IRB.
+"""Miscellaneous form generators (KFSYSCC form pack).
 
 Generates SF076 form from config dict.
 """
@@ -21,7 +21,7 @@ def generate_sf076(config, output_dir):
     pi = config["pi"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "閱卷複印申請登記表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -29,7 +29,7 @@ def generate_sf076(config, output_dir):
     # Simple header: IRB no and title only
     tbl_h = doc.add_table(rows=2, cols=2)
     tbl_h.alignment = WD_TABLE_ALIGNMENT.CENTER
-    add_ct(tbl_h.rows[0].cells[0], "KFSYSCC-IRB編號", bold=True, size=11)
+    add_ct(tbl_h.rows[0].cells[0], institution().irb_no_label, bold=True, size=11)
     add_ct(tbl_h.rows[0].cells[1], config["study"]["irb_no"], size=11)
     add_ct(tbl_h.rows[1].cells[0], "計畫名稱", bold=True, size=11)
     add_ct(tbl_h.rows[1].cells[1], config["study"]["title_zh"], size=11)

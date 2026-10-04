@@ -1,4 +1,4 @@
-"""SAE and non-compliance event generators for KFSYSCC IRB.
+"""SAE and non-compliance event generators (KFSYSCC form pack).
 
 Generates SF079, SF044, SF074, SF080, SF024 forms from config dict.
 """
@@ -20,7 +20,7 @@ def generate_sf079(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "嚴重不良反應事件審查送審資料表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -82,7 +82,7 @@ def generate_sf044(config, output_dir):
     pi = config["pi"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "嚴重不良反應事件通報表（本院）", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -182,7 +182,7 @@ def generate_sf074(config, output_dir):
     pi = config["pi"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "嚴重不良反應事件通報表（他院）", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -286,7 +286,7 @@ def generate_sf080(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "試驗不遵從事件審查送審資料表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -347,7 +347,7 @@ def generate_sf024(config, output_dir):
     pi = config["pi"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "試驗不遵從事件報告表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))

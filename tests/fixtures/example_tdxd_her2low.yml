@@ -4,6 +4,8 @@
 #
 #   cp tests/fixtures/example_tdxd_her2low.yml config.yml && make all
 
+institution: kfsyscc        # institutions/<id>/profile.yml
+
 study:
   irb_no: ""
   project_no: "不適用"

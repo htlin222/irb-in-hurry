@@ -1,6 +1,8 @@
 # ICI-induced thyroid dysfunction in advanced NSCLC
 # Retrospective cohort study — new case submission
 
+institution: kfsyscc        # institutions/<id>/profile.yml
+
 study:
   irb_no: "20260401A"
   project_no: "不適用"

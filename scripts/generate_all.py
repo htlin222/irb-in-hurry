@@ -2,19 +2,20 @@
 """Main orchestrator: load config → select forms → generate all → update checklist."""
 import os
 import sys
-import importlib
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.docx_utils import load_config, apply_official_page_setup
-from scripts.form_selector import select_forms, get_generator, FORM_REGISTRY
+from scripts.form_selector import select_forms, load_generator
 from scripts.checklist import generate_checklist
+from scripts.institution import activate
 
 
 def main(config_path="config.yml", output_dir="output"):
     """Generate all required IRB forms based on config."""
     config = load_config(config_path)
+    inst = activate(config)
     os.makedirs(output_dir, exist_ok=True)
 
     # Phase name mapping
@@ -32,6 +33,7 @@ def main(config_path="config.yml", output_dir="output"):
     print(f"╔══════════════════════════════════════════════╗")
     print(f"║  IRB-in-Hurry Form Generator                ║")
     print(f"╠══════════════════════════════════════════════╣")
+    print(f"║  IRB:     {inst.id:<34}║")
     print(f"║  IRB No:  {irb_no:<34}║")
     print(f"║  Phase:   {phase_zh:<34}║")
     print(f"╚══════════════════════════════════════════════╝")
@@ -47,16 +49,12 @@ def main(config_path="config.yml", output_dir="output"):
     # Generate each form
     results = []  # (form_id, name_zh, path_or_None, status)
     for fid, name_zh in forms:
-        gen_info = get_generator(fid)
-        if gen_info is None:
-            print(f"  ⚠ {fid} {name_zh} — no generator registered")
-            results.append((fid, name_zh, None, "missing"))
-            continue
-
-        mod_path, func_name = gen_info
         try:
-            mod = importlib.import_module(f"scripts.{mod_path}")
-            gen_func = getattr(mod, func_name)
+            gen_func = load_generator(fid)
+            if gen_func is None:
+                print(f"  ⚠ {fid} {name_zh} — no generator registered")
+                results.append((fid, name_zh, None, "missing"))
+                continue
             path = gen_func(config, output_dir)
             apply_official_page_setup(path)
             print(f"  ■ {fid} {name_zh} → {os.path.basename(path)}")

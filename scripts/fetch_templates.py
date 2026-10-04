@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-"""Download the official blank KFSYSCC IRB forms for layout validation.
+"""Cache the institution's official blank forms for layout validation.
 
-Scrapes https://www.kfsyscc.org/human/common_files/{1..11}, downloads every
-linked IRB_SFxxx form from Google Drive into templates/official/, and converts
-legacy .doc files to .docx (LibreOffice) so validate_layout.py can read them.
+Driven by the `templates:` block of the active institution profile:
+
+- `index_url` set   → scrape those pages, download every linked form whose
+                      label matches `form_id_pattern` / `named_forms`
+                      (Google Drive or direct links) into templates/<id>/
+- no `index_url`    → index blanks you dropped into templates/<id>/ by hand,
+                      mapped in `templates.files` (written by onboard.py) or
+                      named after their form id
+
+Legacy .doc files are converted to .docx (LibreOffice) so validate_layout.py
+can read them. The result is templates/<id>/index.json.
 
 Usage: uv run python scripts/fetch_templates.py [--force]
 """
@@ -13,29 +21,43 @@ import os
 import re
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 
-BASE_URL = "https://www.kfsyscc.org/human/common_files/{}"
-PAGES = range(1, 12)
-TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            "templates", "official")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.institution import current
+
 INDEX_FILE = "index.json"
+FORM_EXTS = (".docx", ".doc", ".pdf")
 
-LINK_RE = re.compile(r'<a[^>]*href="([^"]*(?:drive|docs)\.google\.com[^"]*)"[^>]*>(.*?)</a>', re.S)
-FORM_RE = re.compile(r"SF\s*0*(\d{1,3})")
+LINK_RE = re.compile(r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>', re.S)
 DRIVE_ID_RE = re.compile(r"(?:id=|/d/)([A-Za-z0-9_-]{20,})")
-
-
-# Official forms without an SF number, keyed to the id our generators use
-NAMED_FORMS = {"中文計畫摘要": "PROPOSAL"}
 
 
 def normalize_form_id(text):
     """'IRB_SF90 藥品…' → 'SF090'; '中文計畫摘要' → 'PROPOSAL'; else None."""
-    m = FORM_RE.search(text)
-    if m:
-        return f"SF{int(m.group(1)):03d}"
-    return next((fid for name, fid in NAMED_FORMS.items() if text.strip() == name), None)
+    return current().form_id(text)
+
+
+def index_pages():
+    tpl = current().templates
+    url = tpl.get("index_url")
+    if not url:
+        return []
+    lo, hi = tpl.get("index_range", [None, None])
+    return [url.format(n=n) for n in range(lo, hi + 1)] if lo is not None else [url]
+
+
+def download_url(href, page_url):
+    """Resolve a form link to a direct-download URL (Google Drive aware)."""
+    href = html.unescape(href)
+    if "google.com" in href:
+        m = DRIVE_ID_RE.search(href)
+        return f"https://drive.google.com/uc?export=download&id={m.group(1)}" if m else None
+    if current().templates.get("link_host") == "google_drive":
+        return None
+    return urllib.parse.urljoin(page_url, href)
 
 
 def fetch(url, timeout=60):
@@ -45,20 +67,34 @@ def fetch(url, timeout=60):
 
 
 def scrape_links():
-    """Return {form_id: {"title", "drive_id", "page"}} from all common_files pages."""
+    """Return {form_id: {"title", "url", "page"}} from the profile's index pages."""
     found = {}
-    for page in PAGES:
+    for page in index_pages():
         try:
-            body = fetch(BASE_URL.format(page)).decode("utf-8", "replace")
+            body = fetch(page).decode("utf-8", "replace")
         except Exception as e:
-            print(f"  ⚠ page {page}: {e}")
+            print(f"  ⚠ {page}: {e}")
             continue
         for href, label in LINK_RE.findall(body):
             title = " ".join(re.sub(r"<[^>]+>", "", html.unescape(label)).split())
             fid = normalize_form_id(title)
-            m = DRIVE_ID_RE.search(html.unescape(href))
-            if fid and m and fid not in found:
-                found[fid] = {"title": title, "drive_id": m.group(1), "page": page}
+            url = download_url(href, page)
+            if fid and url and fid not in found:
+                found[fid] = {"title": title, "url": url, "page": page}
+    return found
+
+
+def local_forms(template_dir):
+    """Blanks placed by hand: {form_id: {"title", "file"}}."""
+    mapped = current().templates.get("files", {})
+    if mapped:
+        return {fid: {"title": os.path.splitext(f)[0], "file": f} for fid, f in mapped.items()}
+    found = {}
+    for f in sorted(os.listdir(template_dir)):
+        stem, ext = os.path.splitext(f)
+        fid = normalize_form_id(stem) if ext.lower() in FORM_EXTS else None
+        if fid and fid not in found:
+            found[fid] = {"title": stem, "file": f}
     return found
 
 
@@ -86,20 +122,30 @@ def to_docx(doc_path):
 
 
 def main(force=False):
-    os.makedirs(TEMPLATE_DIR, exist_ok=True)
-    print("Scraping KFSYSCC common_files pages...")
-    links = scrape_links()
+    inst = current()
+    template_dir = inst.template_dir
+    os.makedirs(template_dir, exist_ok=True)
+    if index_pages():
+        print(f"Scraping {inst.name} form index ({len(index_pages())} pages)...")
+        links = scrape_links()
+    else:
+        print(f"No templates.index_url for '{inst.id}' — indexing blanks in "
+              f"{os.path.relpath(template_dir)}/ (name each file with its form id)")
+        links = local_forms(template_dir)
     print(f"Found {len(links)} official forms\n")
 
     index = {}
     for fid, info in sorted(links.items()):
-        existing = [f for f in os.listdir(TEMPLATE_DIR) if f.startswith(fid + ".")]
-        if existing and not force:
+        existing = [f for f in os.listdir(template_dir) if f.startswith(fid + ".")]
+        if "file" in info:
+            raw = info["file"]
+            print(f"  ■ {fid} {info['title']} (local)")
+        elif existing and not force:
             raw = next((f for f in existing if not f.endswith(".docx")), existing[0])
             print(f"  ■ {fid} cached")
         else:
             try:
-                data = fetch(f"https://drive.google.com/uc?export=download&id={info['drive_id']}")
+                data = fetch(info["url"])
             except Exception as e:
                 print(f"  ✗ {fid} download failed: {e}")
                 continue
@@ -108,12 +154,12 @@ def main(force=False):
                 print(f"  ✗ {fid} not a Word/PDF file (Drive returned HTML?)")
                 continue
             raw = fid + ext
-            with open(os.path.join(TEMPLATE_DIR, raw), "wb") as f:
+            with open(os.path.join(template_dir, raw), "wb") as f:
                 f.write(data)
             print(f"  ■ {fid} {info['title']} ({ext})")
 
-        raw_path = os.path.join(TEMPLATE_DIR, raw)
-        docx = raw_path if raw.endswith(".docx") else os.path.join(TEMPLATE_DIR, fid + ".docx")
+        raw_path = os.path.join(template_dir, raw)
+        docx = raw_path if raw.endswith(".docx") else os.path.splitext(raw_path)[0] + ".docx"
         if raw.endswith(".doc") and (force or not os.path.exists(docx)):
             docx = to_docx(raw_path)
             if docx is None:
@@ -121,11 +167,10 @@ def main(force=False):
         index[fid] = {**info, "source": raw,
                       "docx": os.path.basename(docx) if docx and os.path.exists(docx) else None}
 
-    with open(os.path.join(TEMPLATE_DIR, INDEX_FILE), "w", encoding="utf-8") as f:
+    with open(os.path.join(template_dir, INDEX_FILE), "w", encoding="utf-8") as f:
         json.dump(index, f, ensure_ascii=False, indent=2)
-    print(f"\n■ {len(index)} templates indexed → {os.path.relpath(TEMPLATE_DIR)}/{INDEX_FILE}")
+    print(f"\n■ {len(index)} templates indexed → {os.path.relpath(template_dir)}/{INDEX_FILE}")
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     main(force="--force" in sys.argv)

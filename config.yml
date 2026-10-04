@@ -1,6 +1,8 @@
 # Distilled from: raw/proposal_20260330.md
 # EGFR-TKI skin toxicity and treatment response in advanced NSCLC
 
+institution: kfsyscc        # institutions/<id>/profile.yml
+
 study:
   irb_no: ""
   project_no: "不適用"

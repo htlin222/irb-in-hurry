@@ -1,4 +1,4 @@
-"""Consent / waiver / review-type form generators for KFSYSCC IRB.
+"""Consent / waiver / review-type form generators (KFSYSCC form pack).
 
 Generates: SF003, SF004, SF005, SF062, SF063, SF075, SF090, SF091, SF092.
 """
@@ -6,7 +6,7 @@ import os
 
 from scripts.docx_utils import (
     init_doc, set_cell_shading, add_p, add_ct, apply_tb,
-    add_header, add_footer, check, set_run_font,
+    add_header, add_footer, check, set_run_font, institution,
 )
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
@@ -19,7 +19,7 @@ from docx.shared import Pt
 
 def _title_block(doc, subtitle):
     """Add standard two-line title block used by consent/review forms."""
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會",
+    add_p(doc, institution().heading,
           bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(0), sb=Pt(12))
     add_p(doc, subtitle,
           bold=True, size=14, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(0), sb=Pt(6))
@@ -27,7 +27,7 @@ def _title_block(doc, subtitle):
 
 def _consent_title_block(doc, subtitle):
     """Add consent-form style title (hospital name + form subtitle)."""
-    add_p(doc, "和信治癌中心醫院",
+    add_p(doc, institution().name,
           bold=True, size=16, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(0), sb=Pt(12))
     add_p(doc, subtitle,
           bold=True, size=14, alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(0), sb=Pt(6))

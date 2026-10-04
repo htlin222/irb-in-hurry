@@ -54,7 +54,7 @@ Read the user's text and map to config.yml fields. Use these heuristics:
 | English name after Chinese name | `pi.name_en` |
 | 科, 部, department | `pi.dept` |
 | phone, 電話, 分機 | `pi.phone` |
-| email, @kfsyscc.org | `pi.email` |
+| email, @<hospital domain> | `pi.email` |
 | 共同主持人, co-PI, co-investigator | `co_pi[]` |
 
 ### Dates

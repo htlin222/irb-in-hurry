@@ -1,7 +1,7 @@
 [project]
 name = "irb-in-hurry"
 version = "1.0.0"
-description = "Automated KFSYSCC IRB document preparation — 43 forms, 11 categories, one command"
+description = "Institution-agnostic IRB form pipeline: YAML → official DOCX blanks → PDF, with a layout gate. Ships the KFSYSCC form pack (43 forms)."
 requires-python = ">=3.10"
 dependencies = [
     "python-docx",

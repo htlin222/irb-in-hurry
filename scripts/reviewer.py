@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from docx import Document
 from scripts.docx_utils import load_config
+from scripts.institution import activate, current
 from scripts.form_selector import select_forms, FORM_REGISTRY
 from scripts.review_criteria import (
     REVIEW_CRITERIA, PLACEHOLDER_PATTERNS, DECISIONS, SEVERITY,
@@ -306,7 +307,7 @@ def check_administrative(config, form_texts):
 
     results.append(("all_signatures", True, "Signature blocks present (manual step required)"))
     results.append(("current_versions", True, "Using current form versions"))
-    results.append(("submission_noted", True, "Submit to irb@kfsyscc.org"))
+    results.append(("submission_noted", True, f"Submit to {current().submission_email}"))
 
     return results, findings
 
@@ -395,6 +396,7 @@ def check_rules_of_thumb(config, form_texts):
 def run_review(config_path="config.yml", output_dir="output"):
     """Run full review and generate opinion markdown."""
     config = load_config(config_path)
+    activate(config)
     irb_no = config["study"]["irb_no"]
     phase = config["phase"]
     phase_names = {
@@ -556,8 +558,8 @@ def run_review(config_path="config.yml", output_dir="output"):
         "---",
         "",
         f"*本審查意見由 IRB-in-Hurry Reviewer 自動產生，僅供參考。*",
-        f"*正式審查結果以和信治癌中心醫院人體試驗委員會之決議為準。*",
-        f"*送審請寄：irb@kfsyscc.org*",
+        f"*正式審查結果以{current().name}{current().committee}之決議為準。*",
+        f"*送審請寄：{current().submission_email}*",
         f"*審查指引：see .claude/skills/irb/references/reviewer-guide.md*",
     ])
 
