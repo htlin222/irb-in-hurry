@@ -3,6 +3,7 @@ output/
 checklist.md
 reviewers/
 raw/
+templates/official/
 
 # Python / uv
 __pycache__/

@@ -1,4 +1,4 @@
-.PHONY: help setup generate pdf preview dashboard checklist review clean test all
+.PHONY: help setup generate pdf preview dashboard checklist review clean test all templates validate
 
 CONFIG := config.yml
 OUTPUT := output
@@ -16,7 +16,13 @@ generate: ## Generate DOCX forms from config.yml
 pdf: ## Convert DOCX → PDF + PNG previews
 	$(RUN) python scripts/convert.py $(OUTPUT)
 
-all: generate pdf dashboard ## Generate + convert + dashboard
+templates: ## Download official blank forms (for layout comparison)
+	$(RUN) python scripts/fetch_templates.py
+
+validate: ## Layout/font safety gate vs official blank forms (Win/Mac)
+	$(RUN) python scripts/validate_layout.py $(OUTPUT)
+
+all: generate pdf validate dashboard ## Generate + convert + validate + dashboard
 
 dashboard: ## Show submission status
 	./dashboard.sh $(CONFIG)

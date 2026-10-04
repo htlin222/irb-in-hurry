@@ -7,7 +7,7 @@ import importlib
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.docx_utils import load_config
+from scripts.docx_utils import load_config, apply_official_page_setup
 from scripts.form_selector import select_forms, get_generator, FORM_REGISTRY
 from scripts.checklist import generate_checklist
 
@@ -58,6 +58,7 @@ def main(config_path="config.yml", output_dir="output"):
             mod = importlib.import_module(f"scripts.{mod_path}")
             gen_func = getattr(mod, func_name)
             path = gen_func(config, output_dir)
+            apply_official_page_setup(path)
             print(f"  ■ {fid} {name_zh} → {os.path.basename(path)}")
             results.append((fid, name_zh, path, "generated"))
         except Exception as e:
