@@ -11,6 +11,11 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.shared import Pt, Cm
 
 
+def _fname(config, fid, name_zh):
+    """SFXXX_<IRB No>.docx once assigned, else SFXXX_<form name>.docx."""
+    return f"{fid}_{config['study']['irb_no'] or name_zh}.docx"
+
+
 # ---------------------------------------------------------------------------
 # SF001 — 新案審查送審資料表 (v9, 2025.03.03)
 # ---------------------------------------------------------------------------
@@ -80,7 +85,7 @@ def generate_sf001(config, output_dir):
     add_footer(doc, "9", "IRB.SF001", "2025/03/03")
 
     # Save
-    fname = f"SF001_{config['study']['irb_no']}.docx"
+    fname = _fname(config, "SF001", "新案審查送審資料表")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path
@@ -278,7 +283,7 @@ def generate_sf002(config, output_dir):
     add_footer(doc, "11", "IRB.SF002", "2025/03/03")
 
     # Save
-    fname = f"SF002_{config['study']['irb_no']}.docx"
+    fname = _fname(config, "SF002", "研究計畫申請書")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path
@@ -338,7 +343,7 @@ def generate_sf094(config, output_dir):
     add_footer(doc, "1", "IRB.SF094", "2023/05/01")
 
     # Save
-    fname = f"SF094_{config['study']['irb_no']}.docx"
+    fname = _fname(config, "SF094", "顯著財務利益申報表")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path
@@ -361,7 +366,7 @@ def generate_sf011(config, output_dir):
 
     add_p(doc, "（本表內容待補充）", size=11, sa=Pt(12))
 
-    fname = f"SF011_{config['study']['irb_no']}.docx"
+    fname = _fname(config, "SF011", "臨床試驗研究許可證明")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path
@@ -384,7 +389,7 @@ def generate_sf022(config, output_dir):
 
     add_p(doc, "（本表內容待補充）", size=11, sa=Pt(12))
 
-    fname = f"SF022_{config['study']['irb_no']}.docx"
+    fname = _fname(config, "SF022", "資料及安全性監測計畫")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path

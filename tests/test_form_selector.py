@@ -1,17 +1,16 @@
 """Tests for form_selector.py."""
 import pytest
-import yaml
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from scripts.config import load_config
 from scripts.form_selector import select_forms, get_generator, FORM_REGISTRY
 
 
 @pytest.fixture
 def retro_config():
-    with open("tests/fixtures/sample_retrospective.yml") as f:
-        return yaml.safe_load(f)
+    return load_config("examples/gcsf-retrospective/config.toml")
 
 
 def test_retrospective_new_case_selects_correct_forms(retro_config):

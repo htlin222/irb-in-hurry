@@ -12,7 +12,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from docx import Document
-from scripts.docx_utils import load_config
+from scripts.config import load_config, PHASE_NAMES
 from scripts.form_selector import select_forms, FORM_REGISTRY
 from scripts.review_criteria import (
     REVIEW_CRITERIA, PLACEHOLDER_PATTERNS, DECISIONS, SEVERITY,
@@ -106,7 +106,7 @@ def check_completeness(config, output_dir, form_texts):
     dates_blank = not config["dates"].get("study_start") or not config["dates"].get("study_end")
     if dates_blank:
         results.append(("dates_present", False, "Study start or end date is blank"))
-        findings.append(("required", "Study dates (start/end) must be specified in config.yml"))
+        findings.append(("required", "Study dates (start/end) must be specified in config.toml [dates]"))
     else:
         results.append(("dates_present", True, f"Study period: {config['dates']['study_start']} — {config['dates']['study_end']}"))
 
@@ -220,7 +220,7 @@ def check_privacy(config, form_texts):
         results.append(("retention_period", True, f"Data retention: {retention} years"))
     else:
         results.append(("retention_period", False, "Data retention period not specified"))
-        findings.append(("required", "Specify data retention period in config.yml closure.data_safety.retention_years"))
+        findings.append(("required", "Specify data retention period in config.toml [closure.data_safety].retention_years"))
 
     personnel = data_safety.get("authorized_personnel")
     if personnel:
@@ -392,18 +392,12 @@ def check_rules_of_thumb(config, form_texts):
     return findings
 
 
-def run_review(config_path="config.yml", output_dir="output"):
+def run_review(config_path="config.toml", output_dir="output", phase=None):
     """Run full review and generate opinion markdown."""
-    config = load_config(config_path)
+    config = load_config(config_path, phase)
     irb_no = config["study"]["irb_no"]
     phase = config["phase"]
-    phase_names = {
-        "new": "新案審查", "amendment": "修正案審查", "re_review": "複審案審查",
-        "continuing": "期中審查", "closure": "結案審查", "sae": "嚴重不良反應事件審查",
-        "ib_update": "主持人手冊更新", "import": "專案進口審查",
-        "suspension": "計畫暫停/提前終止", "appeal": "申覆案審查",
-    }
-    phase_zh = phase_names.get(phase, phase)
+    phase_zh = PHASE_NAMES[phase]
 
     # Load all generated DOCX files
     docx_files = sorted(glob.glob(os.path.join(output_dir, "*.docx")))
@@ -584,5 +578,5 @@ def run_review(config_path="config.yml", output_dir="output"):
 
 
 if __name__ == "__main__":
-    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.yml"
-    run_review(config_path)
+    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.toml"
+    run_review(config_path, phase=os.environ.get("PHASE") or None)

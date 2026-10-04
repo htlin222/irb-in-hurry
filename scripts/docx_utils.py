@@ -4,7 +4,6 @@ Extracted from irb-close/generate_forms.py, refactored to accept config dict.
 """
 import os
 import re
-import yaml
 from docx import Document
 from docx.shared import Pt, Cm, Twips
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -12,11 +11,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn, nsdecls
 from docx.oxml import parse_xml
 
-
-def load_config(path="config.yml"):
-    """Load and return config dict from YAML file."""
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+from scripts.config import load_config  # noqa: F401  (re-exported)
 
 
 def check(condition: bool) -> str:
@@ -65,12 +60,14 @@ _FORM_ID_RE = re.compile(r"SF\s*0*(\d{1,3})")
 
 
 def form_id_from_path(path):
-    """'SF002_KF-001.docx' → 'SF002'; '中文計畫摘要_proposal.docx' → 'PROPOSAL'."""
+    """'SF002_KF-001.docx' → 'SF002'; '中文計畫摘要_<IRB No>.docx' → 'PROPOSAL'."""
     name = os.path.basename(path)
     m = _FORM_ID_RE.search(name)
     if m:
         return f"SF{int(m.group(1)):03d}"
-    return "PROPOSAL" if "proposal" in name.lower() else None
+    if name.startswith("中文計畫摘要") or "proposal" in name.lower():
+        return "PROPOSAL"
+    return None
 
 
 def official_margins(form_id):

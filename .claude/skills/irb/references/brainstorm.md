@@ -147,6 +147,6 @@ After brainstorming, the user can say something casual like:
 
 Claude should then:
 1. Save to `raw/`
-2. Distill to `config.yml` using [distill.md](distill.md)
+2. Distill to `config.toml` (+ `cv.toml`, `中文計畫摘要.md`) using [distill.md](distill.md)
 3. Generate forms with `make all`
 4. Run reviewer with `make review`

@@ -18,7 +18,7 @@ PHASES = ["new", "amendment", "continuing", "closure"]
 
 @pytest.fixture
 def retro_config():
-    return load_config("tests/fixtures/sample_retrospective.yml")
+    return load_config("examples/gcsf-retrospective/config.toml")
 
 
 def _generate(config, phase, out):
@@ -85,6 +85,7 @@ def test_non_big5_characters_warned(tmp_path):
     ("SF002_KF-001.docx", "SF002"),
     ("IRB_SF90_同意書.docx", "SF090"),
     ("中文計畫摘要_proposal.docx", "PROPOSAL"),
+    ("中文計畫摘要_20250801A.docx", "PROPOSAL"),
     ("checklist.docx", None),
 ])
 def test_form_id_from_path(name, fid):

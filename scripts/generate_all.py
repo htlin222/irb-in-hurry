@@ -2,32 +2,34 @@
 """Main orchestrator: load config → select forms → generate all → update checklist."""
 import os
 import sys
+import argparse
+import glob
 import importlib
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.docx_utils import load_config, apply_official_page_setup
+from scripts.config import load_config, ConfigError, PHASE_NAMES
+from scripts.docx_utils import apply_official_page_setup
 from scripts.form_selector import select_forms, get_generator, FORM_REGISTRY
 from scripts.checklist import generate_checklist
 
 
-def main(config_path="config.yml", output_dir="output"):
+def main(config_path="config.toml", output_dir="output", phase=None):
     """Generate all required IRB forms based on config."""
-    config = load_config(config_path)
+    try:
+        config = load_config(config_path, phase)
+    except ConfigError as e:
+        sys.exit(f"✗ {e}")
     os.makedirs(output_dir, exist_ok=True)
-
-    # Phase name mapping
-    phase_names = {
-        "new": "新案審查", "amendment": "修正案審查", "re_review": "複審案審查",
-        "continuing": "期中審查", "closure": "結案審查", "sae": "嚴重不良反應事件審查",
-        "ib_update": "主持人手冊更新", "import": "專案進口審查",
-        "suspension": "計畫暫停/提前終止", "appeal": "申覆案審查",
-    }
+    # output/ is disposable: drop the previous run so a phase switch leaves no strays
+    for pattern in ("*.docx", "*.pdf", "preview/*.png", "preview/compare/*.png"):
+        for f in glob.glob(os.path.join(output_dir, pattern)):
+            os.remove(f)
 
     phase = config["phase"]
-    phase_zh = phase_names.get(phase, phase)
-    irb_no = config["study"]["irb_no"]
+    phase_zh = PHASE_NAMES[phase]
+    irb_no = config["study"]["irb_no"] or "（待核發）"
 
     print(f"╔══════════════════════════════════════════════╗")
     print(f"║  IRB-in-Hurry Form Generator                ║")
@@ -83,5 +85,10 @@ def main(config_path="config.yml", output_dir="output"):
 
 
 if __name__ == "__main__":
-    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.yml"
-    main(config_path)
+    ap = argparse.ArgumentParser(description="Generate IRB forms from config.toml")
+    ap.add_argument("config", nargs="?", default="config.toml")
+    ap.add_argument("--phase", default=os.environ.get("PHASE") or None,
+                    help="override config phase without editing the file")
+    ap.add_argument("--output", default="output")
+    args = ap.parse_args()
+    main(args.config, args.output, args.phase)

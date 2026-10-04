@@ -39,12 +39,14 @@ Financial disclosure (always included with amendments).
 
 ## Amendment-Specific Config
 
-```yaml
-amendment:
-  change_description: "Modified inclusion criteria to expand age range"
-  affects_consent: false    # Does the change require consent form update?
-  affects_risk: false       # Does the change alter subject risk?
+```toml
+[amendment]
+change_description = "Modified inclusion criteria to expand age range"   # or "@修正說明.md" for long text
+affects_consent    = false   # Does the change require consent form update?
+affects_risk       = false   # Does the change alter subject risk?
 ```
+
+Generate with `make amendment` (= `make all PHASE=amendment`); `config.toml` is not edited.
 
 ## Conditional Forms
 

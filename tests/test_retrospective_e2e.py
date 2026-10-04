@@ -1,6 +1,5 @@
 """End-to-end test: retrospective study → generate all forms → validate output."""
 import pytest
-import yaml
 import os
 import sys
 
@@ -11,7 +10,7 @@ from scripts.docx_utils import load_config
 
 @pytest.fixture
 def retro_config():
-    return load_config("tests/fixtures/sample_retrospective.yml")
+    return load_config("examples/gcsf-retrospective/config.toml")
 
 
 @pytest.fixture
@@ -138,7 +137,7 @@ def test_checklist_generation(retro_config, output_dir, tmp_path):
 
 def test_config_validation():
     """Verify config loads without error."""
-    config = load_config("tests/fixtures/sample_retrospective.yml")
+    config = load_config("examples/gcsf-retrospective/config.toml")
     assert config["study"]["irb_no"] == "20250801A"
     assert config["pi"]["name"] == "林協霆"
     assert config["subjects"]["consent_waiver"] is True
@@ -151,14 +150,14 @@ def test_proposal_summary_uses_config_text(output_dir):
     from docx import Document
     from scripts.generators.proposal import generate_proposal_summary
 
-    config = load_config("tests/fixtures/example_tdxd_her2low.yml")
+    config = load_config("examples/tdxd-her2low/config.toml")
     os.makedirs(output_dir, exist_ok=True)
     text = "\n".join(p.text for p in Document(
         generate_proposal_summary(config, output_dir)).paragraphs)
     assert "DESTINY-Breast04" in text
     assert "1. 主要目的" in text
     assert "（請列出）" not in text
-    assert "標準。疾病" in text  # folded-line spaces removed
+    assert "標準。疾病" in text  # wrapped Markdown lines joined without spaces
 
     config.pop("proposal")
     text = "\n".join(p.text for p in Document(

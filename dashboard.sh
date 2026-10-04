@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # IRB Submission Dashboard
-# Usage: ./dashboard.sh [config.yml]
+# Usage: ./dashboard.sh [config.toml]
 
 set -euo pipefail
 
-CONFIG="${1:-config.yml}"
+CONFIG="${1:-config.toml}"
 CHECKLIST="checklist.md"
 OUTPUT_DIR="output"
 
@@ -16,51 +16,21 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# Extract from config using python (handles YAML properly)
-# Use uv run if available, fallback to python3
+# Resolve config.toml (+ @references) via the project loader; honours $PHASE
 if command -v uv &>/dev/null && [ -f "pyproject.toml" ]; then
     PY="uv run python"
-elif command -v python3 &>/dev/null; then
+else
     PY="python3"
-else
-    echo "⚠ python3 not found"
-    exit 1
 fi
 
-if [ -f "$CONFIG" ]; then
-    eval "$($PY -c "
-import yaml, sys
-with open('$CONFIG') as f:
-    c = yaml.safe_load(f)
-print(f'IRB_NO=\"{c[\"study\"][\"irb_no\"]}\"')
-print(f'PHASE=\"{c[\"phase\"]}\"')
-print(f'TITLE=\"{c[\"study\"][\"title_zh\"][:40]}\"')
-print(f'PI=\"{c[\"pi\"][\"name\"]}\"')
-print(f'STUDY_TYPE=\"{c[\"study\"][\"type\"]}\"')
-print(f'REVIEW_TYPE=\"{c[\"study\"][\"review_type\"]}\"')
-" 2>/dev/null)" || {
-    echo "⚠ Could not parse $CONFIG"
-    exit 1
-}
-else
-    echo "⚠ python3 or $CONFIG not found"
-    exit 1
-fi
-
-# Phase names
-declare -A PHASE_NAMES=(
-    [new]="新案審查" [amendment]="修正案審查" [re_review]="複審案審查"
-    [continuing]="期中審查" [closure]="結案審查" [sae]="嚴重不良反應"
-    [ib_update]="主持人手冊" [import]="專案進口" [suspension]="計畫暫停"
-    [appeal]="申覆案"
-)
-PHASE_ZH="${PHASE_NAMES[$PHASE]:-$PHASE}"
+VARS="$($PY scripts/config.py "$CONFIG" --shell)" || exit 1
+eval "$VARS"
 
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════╗${NC}"
 echo -e "${BOLD}║     ${CYAN}KFSYSCC IRB Submission Dashboard${NC}${BOLD}          ║${NC}"
 echo -e "${BOLD}╠══════════════════════════════════════════════╣${NC}"
-echo -e "${BOLD}║${NC} IRB No:     ${GREEN}${IRB_NO}${NC}"
+echo -e "${BOLD}║${NC} IRB No:     ${GREEN}${IRB_NO:-（待核發）}${NC}"
 echo -e "${BOLD}║${NC} Phase:      ${CYAN}${PHASE_ZH}${NC} (${PHASE})"
 echo -e "${BOLD}║${NC} PI:         ${PI}"
 echo -e "${BOLD}║${NC} Study Type: ${STUDY_TYPE} / ${REVIEW_TYPE}"

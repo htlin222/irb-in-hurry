@@ -42,12 +42,14 @@ Added when `continuing_review.extension_requested: true`. Study extension reques
 
 ## Continuing Review Config
 
-```yaml
-continuing_review:
-  enrollment_status: "active"     # active | completed | suspended
-  deviations: 0                   # Number of protocol deviations
-  extension_requested: false      # Request study period extension
+```toml
+[continuing_review]
+enrollment_status   = "active"    # active | completed | suspended
+deviations          = 0           # Number of protocol deviations
+extension_requested = false       # Request study period extension
 ```
+
+Generate with `make continuing` (= `make all PHASE=continuing`); `config.toml` is not edited.
 
 ## Conditional Forms
 
