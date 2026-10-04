@@ -4,14 +4,20 @@ Generates: SF003, SF004, SF005, SF062, SF063, SF075, SF090, SF091, SF092.
 """
 import os
 
-from scripts.docx_utils import (
-    init_doc, set_cell_shading, add_p, add_ct, apply_tb,
-    add_header, add_footer, check, set_run_font,
-)
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    check,
+    init_doc,
+    set_run_font,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -64,7 +70,7 @@ def _consent_contact_section(doc, config, section_num):
     pi_email = config["pi"].get("email", "＿＿＿＿＿＿＿＿")
 
     add_p(doc, f"{section_num}、聯絡人", bold=True, size=12, sa=Pt(8), sb=Pt(2))
-    add_p(doc, f"如果您對本研究有任何疑問，請聯繫：", size=12, sa=Pt(2), sb=Pt(2))
+    add_p(doc, "如果您對本研究有任何疑問，請聯繫：", size=12, sa=Pt(2), sb=Pt(2))
     add_p(doc, f"  計畫主持人：{pi_name}", size=12, sa=Pt(2), sb=Pt(2))
     add_p(doc, f"  電話：{pi_phone}", size=12, sa=Pt(2), sb=Pt(2))
     add_p(doc, f"  電子郵件：{pi_email}", size=12, sa=Pt(2), sb=Pt(2))

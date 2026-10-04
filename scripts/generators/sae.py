@@ -4,11 +4,19 @@ Generates SF079, SF044, SF074, SF080, SF024 forms from config dict.
 """
 import os
 
-from scripts.docx_utils import *
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    init_doc,
+    set_cell_shading,
+)
 
 # ---------------------------------------------------------------------------
 # SF079 — 嚴重不良反應事件審查送審資料表 (v4)

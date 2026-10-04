@@ -5,12 +5,13 @@ Requires:
 - LibreOffice (for DOCX→PDF): brew install --cask libreoffice  (Windows: winget)
 - poppler (for PDF→PNG): brew install poppler  (Windows: conda/scoop poppler)
 """
-import os
-import sys
 import glob
+import os
 import shutil
 import subprocess
-
+import sys
+import tempfile
+from pathlib import Path
 
 SOFFICE_CANDIDATES = [
     "/Applications/LibreOffice.app/Contents/MacOS/soffice",          # macOS
@@ -36,6 +37,12 @@ def soffice_env():
     return env
 
 
+def soffice_cmd(soffice, *args):
+    """soffice argv with a private profile, so conversion works while LibreOffice is open."""
+    profile = Path(tempfile.gettempdir(), "irb-in-hurry-lo-profile").as_uri()
+    return [soffice, f"-env:UserInstallation={profile}", "--headless", *args]
+
+
 def docx_to_pdf(docx_path, output_dir):
     """Convert DOCX to PDF using LibreOffice headless."""
     soffice = find_soffice()
@@ -46,8 +53,7 @@ def docx_to_pdf(docx_path, output_dir):
 
     try:
         result = subprocess.run(
-            [soffice, "--headless", "--convert-to", "pdf",
-             "--outdir", output_dir, docx_path],
+            soffice_cmd(soffice, "--convert-to", "pdf", "--outdir", output_dir, docx_path),
             capture_output=True, text=True, timeout=120, env=soffice_env(),
         )
         pdf_path = os.path.join(
@@ -85,14 +91,18 @@ def pdf_to_png(pdf_path, preview_dir, dpi=150):
 
 
 def main(output_dir="output"):
-    """Convert all DOCX files in output_dir to PDF and PNG previews."""
+    """Convert all DOCX files in output_dir to PDF and PNG previews. Returns an exit code."""
     preview_dir = os.path.join(output_dir, "preview")
     os.makedirs(preview_dir, exist_ok=True)
 
     docx_files = sorted(glob.glob(os.path.join(output_dir, "*.docx")))
     if not docx_files:
-        print("No .docx files found in output/")
-        return
+        print(f"No .docx files found in {output_dir}/")
+        return 0
+    if find_soffice() is None:
+        print("⚠ LibreOffice not found — skipping PDF conversion. Install: brew install --cask libreoffice "
+              "(macOS) / winget install TheDocumentFoundation.LibreOffice (Windows)")
+        return 0
 
     print(f"Converting {len(docx_files)} DOCX files...")
     print()
@@ -121,8 +131,9 @@ def main(output_dir="output"):
     print(f"  PDFs:     {pdf_count}/{len(docx_files)}")
     print(f"  Previews: {png_count}/{len(docx_files)}")
     print(f"{'═' * 40}")
+    return 0 if pdf_count == len(docx_files) else 1
 
 
 if __name__ == "__main__":
     output_dir = sys.argv[1] if len(sys.argv) > 1 else "output"
-    main(output_dir)
+    sys.exit(main(output_dir))

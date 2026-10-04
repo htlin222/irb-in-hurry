@@ -7,6 +7,11 @@ description: Complete reference for all config.yml fields used by IRB form gener
 
 All study data lives in `config.yml`. Generators read from this file; nothing is hardcoded.
 
+`scripts/config.py` validates it on load and lists every problem at once: missing
+required fields, unknown `phase` / `study.type` / `study.review_type`, and quoted
+booleans (`"false"` is a non-empty string and would count as true). Optional
+sections may be omitted entirely.
+
 ## `study` (required)
 
 | Field | Type | Description | Example |

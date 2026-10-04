@@ -4,11 +4,20 @@ Generates SF030, SF031, SF032 forms from config dict.
 """
 import os
 
-from scripts.docx_utils import *
-from docx.shared import Pt, Cm
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    check,
+    init_doc,
+    set_cell_shading,
+)
 
 # ---------------------------------------------------------------------------
 # SF030 — 期中審查送審資料表 v8, 2025.03.03
@@ -89,12 +98,10 @@ def generate_sf031(config, output_dir):
     """Generate SF031: continuing review report."""
     doc = init_doc(sz=12)
     study = config["study"]
-    pi = config["pi"]
     dates = config["dates"]
     subjects = config["subjects"]
     cr = config.get("continuing_review", {})
     is_retro = study.get("type", "") == "retrospective"
-    is_drug = study.get("drug_device", False)
     waiver = subjects.get("consent_waiver", False)
 
     # Title
@@ -244,7 +251,7 @@ def generate_sf031(config, output_dir):
     add_p(doc, "八、主持人聲明", bold=True, size=12, sa=Pt(6))
     add_p(doc, "本人聲明以上所述均屬實，本計畫之執行均遵守研究計畫書及相關法規之規定。",
           size=10, sa=Pt(4))
-    add_p(doc, f"計畫主持人簽名：＿＿＿＿＿＿＿＿＿＿　日期：＿＿＿＿年＿＿月＿＿日",
+    add_p(doc, "計畫主持人簽名：＿＿＿＿＿＿＿＿＿＿　日期：＿＿＿＿年＿＿月＿＿日",
           size=10, sa=Pt(12))
 
     # Footer
@@ -314,7 +321,7 @@ def generate_sf032(config, output_dir):
     add_p(doc, "五、主持人聲明", bold=True, size=12, sa=Pt(6))
     add_p(doc, "本人聲明以上所述均屬實，並承諾於展延期間內遵守研究計畫書及相關法規之規定。",
           size=10, sa=Pt(4))
-    add_p(doc, f"計畫主持人簽名：＿＿＿＿＿＿＿＿＿＿　日期：＿＿＿＿年＿＿月＿＿日",
+    add_p(doc, "計畫主持人簽名：＿＿＿＿＿＿＿＿＿＿　日期：＿＿＿＿年＿＿月＿＿日",
           size=10, sa=Pt(12))
 
     # Footer
