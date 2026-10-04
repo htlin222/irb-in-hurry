@@ -23,11 +23,6 @@ pi:
   phone: "0920476278（院內分機1640）"
   email: "htlin222@kfsyscc.org"
 
-co_pi:
-  - name: "邱倫維"
-    name_en: "Lun-Wei Chiou"
-    dept: "腫瘤內科部／主治醫師"
-
 dates:
   study_start: "2026年11月01日"
   study_end: "2027年10月31日"
@@ -98,7 +93,7 @@ closure:
     deidentified: true
     encrypted: true
     retention_years: 7
-    authorized_personnel: "林協霆（計畫主持人）、邱倫維（共同主持人）"
+    authorized_personnel: "林協霆（計畫主持人）"
 
 amendment:
   change_description: ""
