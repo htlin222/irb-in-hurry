@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scripts.docx_utils import load_config, apply_official_page_setup
 from scripts.form_selector import select_forms, get_generator, FORM_REGISTRY
 from scripts.checklist import generate_checklist
+from scripts.cover_letter import generate_cover_letter
 
 
 def main(config_path="config.yml", output_dir="output"):
@@ -65,8 +66,12 @@ def main(config_path="config.yml", output_dir="output"):
             print(f"  ✗ {fid} {name_zh} — ERROR: {e}")
             results.append((fid, name_zh, None, "error"))
 
+    # Draft cover letter to the IRB committee
+    letter_path = generate_cover_letter(config, results, output_dir)
+    print(f"\n■ Cover letter draft → {letter_path}")
+
     # Generate checklist
-    checklist_path = generate_checklist(config, results, phase_zh)
+    checklist_path = generate_checklist(config, results, phase_zh, letter_path=letter_path)
     print(f"\n■ Checklist written to {checklist_path}")
 
     # Summary

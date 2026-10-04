@@ -28,6 +28,7 @@ make all                          # Generate + PDF + layout gate + dashboard
 - `scripts/generators/` — One module per IRB category
 - `scripts/generate_all.py` — Main orchestrator
 - `scripts/checklist.py` — ■/□ checklist generator
+- `scripts/cover_letter.py` — 致委員會函稿 (polite cover letter draft per phase) → `output/IRB_致委員會函稿_<階段>.md`
 - `scripts/convert.py` — DOCX→PDF→PNG pipeline
 - `scripts/fetch_templates.py` — Download official blank forms → `templates/official/`
 - `scripts/validate_layout.py` — Layout/font safety gate → `output/layout_report.md`
