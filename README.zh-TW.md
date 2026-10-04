@@ -7,7 +7,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-pytest-brightgreen.svg)](#測試)
 [![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#表單涵蓋範圍)
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](#授權)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](#授權條款)
 
 [和信治癌中心醫院](https://www.kfsyscc.org/) IRB（人體試驗委員會）送審文件自動化產生工具。
 
