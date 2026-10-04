@@ -4,11 +4,20 @@ Generates SF019 from config dict.
 """
 import os
 
-from scripts.docx_utils import *
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    init_doc,
+    set_cell_shading,
+    set_run_font,
+)
 
 # ---------------------------------------------------------------------------
 # SF019 — 複審案申請表 v4, 2018/01/02

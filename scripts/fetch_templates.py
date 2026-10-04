@@ -74,13 +74,16 @@ def sniff_ext(data):
 
 def to_docx(doc_path):
     """Convert legacy .doc → .docx next to it. Returns new path or None."""
-    from scripts.convert import find_soffice
+    from scripts.convert import find_soffice, soffice_cmd
     soffice = find_soffice()
     if not soffice:
         return None
     out_dir = os.path.dirname(doc_path)
-    subprocess.run([soffice, "--headless", "--convert-to", "docx", "--outdir", out_dir, doc_path],
-                   capture_output=True, timeout=180)
+    try:
+        subprocess.run(soffice_cmd(soffice, "--convert-to", "docx", "--outdir", out_dir, doc_path),
+                       capture_output=True, timeout=180)
+    except subprocess.TimeoutExpired:
+        return None
     docx = os.path.splitext(doc_path)[0] + ".docx"
     return docx if os.path.exists(docx) else None
 

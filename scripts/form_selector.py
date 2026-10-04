@@ -3,6 +3,14 @@
 Returns ordered list of (form_id, form_name_zh, generator_module, generator_func).
 """
 
+# Phase id → Chinese name shown in banners, checklist and dashboard
+PHASE_NAMES = {
+    "new": "新案審查", "amendment": "修正案審查", "re_review": "複審案審查",
+    "continuing": "期中審查", "closure": "結案審查", "sae": "嚴重不良反應事件審查",
+    "ib_update": "主持人手冊更新", "import": "專案進口審查",
+    "suspension": "計畫暫停/提前終止", "appeal": "申覆案審查",
+}
+
 # Form registry: form_id → (Chinese name, generator module path, function name)
 FORM_REGISTRY = {
     # New case (新案審查)

@@ -5,11 +5,22 @@ Generates DOCX forms for new IRB case submission at KFSYSCC.
 
 import os
 
-from scripts.docx_utils import *
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.shared import Pt, Cm
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    check,
+    form_filename,
+    init_doc,
+    set_cell_shading,
+    set_run_font,
+)
 
 # ---------------------------------------------------------------------------
 # SF001 — 新案審查送審資料表 (v9, 2025.03.03)
@@ -80,7 +91,7 @@ def generate_sf001(config, output_dir):
     add_footer(doc, "9", "IRB.SF001", "2025/03/03")
 
     # Save
-    fname = f"SF001_{config['study']['irb_no']}.docx"
+    fname = form_filename("SF001", config, "新案審查送審資料表")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path
@@ -278,7 +289,7 @@ def generate_sf002(config, output_dir):
     add_footer(doc, "11", "IRB.SF002", "2025/03/03")
 
     # Save
-    fname = f"SF002_{config['study']['irb_no']}.docx"
+    fname = form_filename("SF002", config, "研究計畫申請書")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path
@@ -338,7 +349,7 @@ def generate_sf094(config, output_dir):
     add_footer(doc, "1", "IRB.SF094", "2023/05/01")
 
     # Save
-    fname = f"SF094_{config['study']['irb_no']}.docx"
+    fname = form_filename("SF094", config, "顯著財務利益申報表")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path
@@ -361,7 +372,7 @@ def generate_sf011(config, output_dir):
 
     add_p(doc, "（本表內容待補充）", size=11, sa=Pt(12))
 
-    fname = f"SF011_{config['study']['irb_no']}.docx"
+    fname = form_filename("SF011", config, "臨床試驗研究許可證明")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path
@@ -384,7 +395,7 @@ def generate_sf022(config, output_dir):
 
     add_p(doc, "（本表內容待補充）", size=11, sa=Pt(12))
 
-    fname = f"SF022_{config['study']['irb_no']}.docx"
+    fname = form_filename("SF022", config, "資料及安全性監測計畫")
     path = os.path.join(output_dir, fname)
     doc.save(path)
     return path

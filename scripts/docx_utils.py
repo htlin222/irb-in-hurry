@@ -4,19 +4,15 @@ Extracted from irb-close/generate_forms.py, refactored to accept config dict.
 """
 import os
 import re
-import yaml
+
 from docx import Document
-from docx.shared import Pt, Cm, Twips
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.oxml.ns import qn, nsdecls
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls, qn
+from docx.shared import Pt, Twips
 
-
-def load_config(path="config.yml"):
-    """Load and return config dict from YAML file."""
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+from scripts.config import load_config  # noqa: F401  (re-exported for older callers)
 
 
 def check(condition: bool) -> str:
@@ -61,16 +57,25 @@ OFFICIAL_MARGINS = {
     "SF092": (851, 851, 851, 1134),
     "SF094": (1134, 1134, 1134, 1134),
 }
+_UNSAFE_FILENAME_RE = re.compile(r'[\\/:*?"<>|\s]+')
+
+
+def form_filename(prefix, config, fallback):
+    """'SF001_<irb_no>.docx', or 'SF001_<fallback>.docx' before an IRB number exists."""
+    irb_no = _UNSAFE_FILENAME_RE.sub("-", str(config["study"].get("irb_no") or "")).strip("-")
+    return f"{prefix}_{irb_no or fallback}.docx"
+
+
 _FORM_ID_RE = re.compile(r"SF\s*0*(\d{1,3})")
 
 
 def form_id_from_path(path):
-    """'SF002_KF-001.docx' → 'SF002'; '中文計畫摘要_proposal.docx' → 'PROPOSAL'."""
+    """'SF002_KF-001.docx' → 'SF002'; '中文計畫摘要_20250801A.docx' → 'PROPOSAL'."""
     name = os.path.basename(path)
     m = _FORM_ID_RE.search(name)
     if m:
         return f"SF{int(m.group(1)):03d}"
-    return "PROPOSAL" if "proposal" in name.lower() else None
+    return "PROPOSAL" if name.startswith("中文計畫摘要") or "proposal" in name.lower() else None
 
 
 def official_margins(form_id):
@@ -172,15 +177,15 @@ def set_run_font(run, font_name="標楷體", size=12, bold=False):
     rPr.rFonts.set(qn('w:eastAsia'), font_name)
 
 
-def add_p(doc, text, bold=False, size=12, alignment=None, sa=Pt(6), sb=Pt(0)):
+def add_p(doc, text, bold=False, size=12, alignment=None, sa=None, sb=None):
     """Add a formatted paragraph to the document."""
     p = doc.add_paragraph()
     run = p.add_run(text)
     set_run_font(run, "標楷體", size, bold)
     if alignment:
         p.alignment = alignment
-    p.paragraph_format.space_after = sa
-    p.paragraph_format.space_before = sb
+    p.paragraph_format.space_after = Pt(6) if sa is None else sa
+    p.paragraph_format.space_before = Pt(0) if sb is None else sb
     return p
 
 

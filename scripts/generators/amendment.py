@@ -4,11 +4,20 @@ Generates SF014, SF015, SF016 forms from config dict.
 """
 import os
 
-from scripts.docx_utils import *
-from docx.shared import Pt, Cm
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    check,
+    init_doc,
+    set_cell_shading,
+)
 
 # ---------------------------------------------------------------------------
 # SF014 — 修正案審查送審資料表 (v10, 2025.03.03)
