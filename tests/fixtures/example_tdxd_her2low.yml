@@ -1,0 +1,111 @@
+# Example case: T-DXd vs physician's-choice chemotherapy in HR+/HER2-low MBC
+# Retrospective single-center PSM cohort — new case submission
+# PI details from https://lin.hsiehting.com/cv/#zh ; clinical content is illustrative.
+#
+#   cp tests/fixtures/example_tdxd_her2low.yml config.yml && make all
+
+study:
+  irb_no: ""
+  project_no: "不適用"
+  title_zh: "荷爾蒙受體陽性、HER2低表現轉移性乳癌患者於CDK4/6抑制劑及二線荷爾蒙治療失敗後接受Trastuzumab Deruxtecan與醫師選擇化學治療之臨床預後比較：單中心傾向分數配對回溯性世代研究"
+  title_en: "Trastuzumab Deruxtecan versus Physician's Choice Chemotherapy after CDK4/6 Inhibitor and Second-line Endocrine Therapy in HR-positive, HER2-low Metastatic Breast Cancer: A Single-Center Propensity Score-Matched Retrospective Cohort Study"
+  type: retrospective
+  design: cohort
+  review_type: expedited
+  drug_device: false
+  genetic: false
+  multicenter: false
+
+pi:
+  name: "林協霆"
+  name_en: "Hsieh-Ting Lin"
+  dept: "血液腫瘤內科／專任主治醫師"
+  phone: "0920476278（院內分機1640）"
+  email: "htlin222@kfsyscc.org"
+
+co_pi:
+  - name: "邱倫維"
+    name_en: "Lun-Wei Chiou"
+    dept: "腫瘤內科部／主治醫師"
+
+dates:
+  study_start: "2026年11月01日"
+  study_end: "2027年10月31日"
+  data_period: "2020年01月01日 至 2026年06月30日"
+  irb_approval_date: ""
+
+subjects:
+  planned_n: 220
+  actual_n: 0
+  consent_waiver: true
+  vulnerable_population: false
+  groups:
+    - name: "T-DXd組（trastuzumab deruxtecan 5.4 mg/kg 每3週）"
+      n: 70
+    - name: "醫師選擇化療組（capecitabine、eribulin、gemcitabine、paclitaxel 或 nab-paclitaxel）"
+      n: 150
+    - name: "傾向分數1:1配對後每組（預估）"
+      n: 60
+
+# Free text for 中文計畫摘要 (scripts/generators/proposal.py); keep within 2 pages
+proposal:
+  background: >-
+    荷爾蒙受體陽性（HR+）乳癌約佔轉移性乳癌七成，CDK4/6抑制劑合併荷爾蒙治療為現行一線標準。
+    疾病於CDK4/6抑制劑及後續荷爾蒙治療進展後，多數患者轉為單一化學治療，預後有限。
+    約六成HR+患者屬HER2低表現（IHC 1+ 或 IHC 2+/ISH陰性）。DESTINY-Breast04 與 DESTINY-Breast06
+    顯示 trastuzumab deruxtecan（T-DXd）相較醫師選擇化療可延長無疾病惡化存活期，
+    然臨床試驗族群經高度篩選，亞洲真實世界之療效、間質性肺病（ILD）發生率及治療順序資料仍不足，
+    故以本院資料進行傾向分數配對比較，以提供臨床決策依據。
+  objectives:
+    - "主要目的：比較T-DXd與醫師選擇化療之真實世界無疾病惡化存活期（rwPFS）。"
+    - "次要目的：比較整體存活期（OS）、至下一線治療時間（TTNT）、真實世界客觀反應率（rwORR）、3級以上不良事件、ILD發生率及減量／停藥比例；並依HER2 IHC 1+ 與 2+、有無內臟轉移及CDK4/6抑制劑治療時間（<12個月 vs ≥12個月）進行次族群分析。"
+  design: >-
+    以接受T-DXd或醫師選擇化療之首次給藥日為指標日（index date），
+    以傾向分數1:1最近鄰配對（caliper 0.2 SD）平衡兩組基期特徵。
+  inclusion:
+    - "年滿20歲，經病理確診之HR+、HER2低表現（IHC 1+ 或 IHC 2+/ISH陰性）轉移性或無法切除之局部晚期乳癌。"
+    - "轉移後曾接受CDK4/6抑制劑合併荷爾蒙治療，且於二線荷爾蒙治療後疾病進展。"
+    - "資料回溯期間內開始接受T-DXd或單一化學治療至少一劑。"
+  exclusion:
+    - "HER2陽性（IHC 3+ 或 ISH陽性）或HER2 IHC 0。"
+    - "同時罹患其他活動性惡性腫瘤，或曾參與相關藥物臨床試驗。"
+    - "指標日後追蹤資料不足（<1次影像評估）。"
+  variables: >-
+    年齡、ECOG體能狀態、停經狀態、初診分期（de novo或復發）、ER/PR表現量、HER2 IHC分數、
+    轉移部位與數目（含肝、肺、腦轉移）、既往荷爾蒙治療線數、CDK4/6抑制劑種類與治療時間、
+    轉移後既往化療線數、治療劑量與調整、影像評估結果、不良事件（依CTCAE v5.0回溯分級）、ILD、後續治療及存活狀態。
+  endpoints: >-
+    主要終點為rwPFS（指標日至影像或臨床判定疾病惡化或死亡）；
+    次要終點為OS、TTNT、rwORR、3級以上不良事件及ILD發生率。
+  statistics: >-
+    以邏輯斯迴歸估計傾向分數，共變項含年齡、ECOG、內臟轉移、肝轉移、de novo疾病、HER2 IHC分數、
+    CDK4/6抑制劑治療時間、荷爾蒙治療線數及既往化療線數；配對後以標準化平均差（SMD）<0.1判定平衡。
+    存活分析採Kaplan-Meier法及log-rank檢定，以分層Cox比例風險模型估計風險比（HR）及95%信賴區間（配對對子分層、穩健標準誤）。
+    敏感度分析：逆機率加權（IPTW）、多變項Cox迴歸及排除IHC 2+/ISH未知者。類別變項以卡方或Fisher精確檢定。
+    雙尾p<0.05為統計顯著，使用R 4.x（MatchIt、survival套件）。本研究無期中分析。
+  attachments:
+    - "資料收集表（Case Report Form）"
+    - "計畫主持人人體研究倫理及GCP訓練證明"
+
+phase: new
+
+closure:
+  extensions: 0
+  amendments: 0
+  sae_count: 0
+  specimens: false
+  data_safety:
+    deidentified: true
+    encrypted: true
+    retention_years: 7
+    authorized_personnel: "林協霆（計畫主持人）、邱倫維（共同主持人）"
+
+amendment:
+  change_description: ""
+  affects_consent: false
+  affects_risk: false
+
+continuing_review:
+  enrollment_status: ""
+  deviations: 0
+  extension_requested: false

@@ -76,6 +76,8 @@ make setup
 # 2. 編輯 config.yml 填入研究資料
 #    （或複製範例設定）
 cp tests/fixtures/sample_retrospective.yml config.yml
+#    完整範例（含填好的中文計畫摘要：HER2 低表現 T-DXd vs 化療 PSM）：
+#    cp tests/fixtures/example_tdxd_her2low.yml config.yml
 
 # 3. 一鍵產生所有文件
 make all

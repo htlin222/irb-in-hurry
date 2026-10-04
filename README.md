@@ -108,6 +108,8 @@ make setup
 # 2. Edit config.yml with your study details
 #    (or copy the example fixture)
 cp tests/fixtures/sample_retrospective.yml config.yml
+#    Full example with a filled 中文計畫摘要 (T-DXd vs chemo, HER2-low, PSM):
+#    cp tests/fixtures/example_tdxd_her2low.yml config.yml
 
 # 3. Generate everything
 make all
