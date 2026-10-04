@@ -1,15 +1,51 @@
-# IRB-in-Hurry
+<!--
+  Keywords: IRB form generator, IRB automation, ethics review, human subjects research,
+  KFSYSCC IRB, 和信治癌中心醫院 人體試驗委員會, IRB 送審, research ethics paperwork, python-docx
+-->
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-15%20passed-brightgreen.svg)](#testing)
-[![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#form-coverage)
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — automated IRB form generator for KFSYSCC: 43 IRB forms from one YAML file and one command" width="100%">
+</p>
 
-Automated IRB document preparation for [KFSYSCC](https://www.kfsyscc.org/) (Koo Foundation Sun Yat-Sen Cancer Center).
+<h1 align="center">IRB-in-Hurry: Automated IRB Form Generator for KFSYSCC</h1>
 
-Fill in a YAML config with your study details, run one command, and get all required IRB submission forms as Word documents — ready to sign and submit.
+<p align="center">
+  <strong>Turn one YAML file into a complete, submission-ready IRB packet — DOCX + PDF, in seconds.</strong>
+</p>
 
-[繁體中文版 README](README.zh-TW.md)
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-blue.svg" alt="Python 3.10+"></a>
+  <a href="#testing"><img src="https://img.shields.io/badge/tests-pytest-brightgreen.svg" alt="Tests: pytest"></a>
+  <a href="#form-coverage"><img src="https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg" alt="IRB forms: 43 of 43"></a>
+  <a href="#claude-code-integration"><img src="https://img.shields.io/badge/Claude%20Code-skill-orange.svg" alt="Claude Code skill"></a>
+  <a href="#license"><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#form-coverage">Form Coverage</a> ·
+  <a href="#usage">Usage</a> ·
+  <a href="#faq">FAQ</a> ·
+  <a href="README.zh-TW.md">繁體中文</a>
+</p>
+
+---
+
+## ⏱️ It's 11:47 PM. The IRB deadline is tomorrow.
+
+You have a brilliant retrospective study. You also have **five Word forms**, each wanting the same IRB number, the same bilingual title, the same PI phone extension, and a very particular opinion about whether a checkbox is ■ or □. You've typed your own name in 標楷體 eleven times tonight. The twelfth time, you misspelled it.
+
+**IRB-in-Hurry** is the colleague who stays late so you don't have to. Describe your study once in `config.yml`, run `make all`, and it:
+
+1. 🧭 **Figures out which forms you need**, based on study type and submission phase
+2. 📝 **Fills every one of them in**: headers, titles, checkboxes, dates, and the rest
+3. 🖨️ **Exports PDFs** with embedded fonts that look the same on Windows and Mac
+4. 🔍 **Checks the layout against the official blank forms** before a reviewer can catch a problem
+5. ✅ **Gives you a ■/□ checklist** of what's left (signatures, attachments, the email to the IRB office)
+
+It's an open-source **IRB form generator and research ethics paperwork automation tool** for the [Koo Foundation Sun Yat-Sen Cancer Center (KFSYSCC, 和信治癌中心醫院)](https://www.kfsyscc.org/) Institutional Review Board. It covers all **11 submission categories** and **43 official forms**: new case, amendment, continuing review, closure, SAE reporting, and more.
+
+> It won't do your ethics thinking for you, and that's the point. It does the typing.
 
 ---
 
@@ -207,6 +243,26 @@ irb-in-hurry/
 └── output/                    # Generated files (gitignored)
 ```
 
+## FAQ
+
+**What is IRB-in-Hurry?**
+An open-source Python tool that fills in KFSYSCC Institutional Review Board (IRB) submission forms automatically from a single YAML config, producing Word (DOCX) and PDF files ready to sign.
+
+**Does it replace IRB review or ethical judgment?**
+No. It never submits, approves, or skips anything. It fills in the paperwork the IRB requires. Study design, risk assessment, and participant protection stay with you and the committee.
+
+**Which IRB submissions are supported?**
+All 11 KFSYSCC categories: new case (新案), re-review (複審), amendment (修正案), continuing review (期中審查), closure (結案), SAE (嚴重不良反應), IB update, project import, suspension, appeal (申覆), and other forms. That's 43 forms in total.
+
+**Will the forms look right on Windows and Mac?**
+Yes. Submit the generated PDF, which has fonts embedded. `make validate` checks A4 page size, official margins, and 標楷體 (DFKai-SB) usage against the official blank templates, and it has to report 0 errors before you submit.
+
+**Can I use it for another hospital's IRB?**
+The form registry and generators are KFSYSCC-specific, but the architecture (YAML → form selector → per-category generators → layout gate) is designed to be adapted. Fork it and swap in your institution's templates.
+
+**Does it work with AI assistants?**
+Yes. It includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that can classify your study from a proposal, draft `config.yml`, and walk you through the remaining manual steps.
+
 ## References
 
 - [KFSYSCC IRB Forms](https://www.kfsyscc.org/human/common_files/1) — Official form downloads
@@ -217,4 +273,8 @@ irb-in-hurry/
 
 ## License
 
-MIT
+MIT. Free to use, fork, and adapt for your own institution's IRB.
+
+---
+
+<p align="center"><sub>Made for researchers who'd rather be doing research. ⏱️ IRB-in-Hurry</sub></p>
