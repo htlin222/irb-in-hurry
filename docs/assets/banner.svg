@@ -82,7 +82,7 @@
   <!-- Copy -->
   <g font-family="Helvetica, Arial, sans-serif">
     <text x="72" y="150" font-size="76" font-weight="800" fill="#ffffff" letter-spacing="-1">IRB-in-<tspan fill="url(#accent)">Hurry</tspan></text>
-    <text x="74" y="204" font-size="28" font-weight="600" fill="#e2e8f0">43 IRB forms. One YAML file. One command.</text>
+    <text x="74" y="204" font-size="28" font-weight="600" fill="#e2e8f0">43 IRB forms. Plain text in. One command.</text>
     <text x="74" y="244" font-size="22" fill="#94a3b8">Ethics in the design — not in copy-pasting IRB numbers.</text>
     <g transform="translate(74 290)" font-size="18" font-weight="700">
       <rect width="148" height="40" rx="20" fill="#ffffff" fill-opacity="0.08" stroke="#facc15" stroke-opacity="0.6"/>

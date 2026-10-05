@@ -21,7 +21,7 @@ PHASES = ["new", "amendment", "continuing", "closure"]
 
 @pytest.fixture
 def retro_config():
-    return load_config("tests/fixtures/sample_retrospective.yml")
+    return load_config("examples/gcsf-retrospective/config.toml")
 
 
 def _generate(config, phase, out):

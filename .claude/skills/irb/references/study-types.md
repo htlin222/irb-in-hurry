@@ -44,15 +44,16 @@ Is this research involving human subjects?
 
 ### Retrospective Chart Review
 
-```yaml
-study:
-  type: retrospective
-  design: cohort          # or case_control, cross_sectional
-  review_type: expedited
-  drug_device: false
-  genetic: false
-subjects:
-  consent_waiver: true
+```toml
+[study]
+type        = "retrospective"
+design      = "cohort"      # or case_control, cross_sectional
+review_type = "expedited"
+drug_device = false
+genetic     = false
+
+[subjects]
+consent_waiver = true
 ```
 
 Auto-inferred by `form_selector._apply_study_type_defaults()`:
@@ -61,38 +62,41 @@ Auto-inferred by `form_selector._apply_study_type_defaults()`:
 
 ### Prospective Observational
 
-```yaml
-study:
-  type: prospective
-  design: cohort          # or cross_sectional
-  review_type: expedited  # or full_board if more than minimal risk
-  drug_device: false
-subjects:
-  consent_waiver: false   # typically requires consent
+```toml
+[study]
+type        = "prospective"
+design      = "cohort"      # or cross_sectional
+review_type = "expedited"   # or full_board if more than minimal risk
+drug_device = false
+
+[subjects]
+consent_waiver = false      # typically requires consent
 ```
 
 ### Clinical Trial
 
-```yaml
-study:
-  type: clinical_trial
-  design: rct
-  review_type: full_board
-  drug_device: true
-subjects:
-  consent_waiver: false
-  vulnerable_population: false  # set true if includes minors/prisoners/etc.
+```toml
+[study]
+type        = "clinical_trial"
+design      = "rct"
+review_type = "full_board"
+drug_device = true
+
+[subjects]
+consent_waiver        = false
+vulnerable_population = false   # set true if includes minors/prisoners/etc.
 ```
 
 ### Genetic Research
 
-```yaml
-study:
-  type: genetic
-  review_type: full_board
-  genetic: true
-subjects:
-  consent_waiver: false
+```toml
+[study]
+type        = "genetic"
+review_type = "full_board"
+genetic     = true
+
+[subjects]
+consent_waiver = false
 ```
 
 ## Review Type Criteria

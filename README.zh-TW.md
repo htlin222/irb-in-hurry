@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — 和信治癌中心醫院 IRB 送審表單自動產生工具：一個 YAML、一行指令、43 份表單" width="100%">
+  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — 和信治癌中心醫院 IRB 送審表單自動產生工具：幾個純文字檔、一行指令、43 份表單" width="100%">
 </p>
 
 # IRB-in-Hurry：和信醫院 IRB 送審表單自動產生器
@@ -11,7 +11,7 @@
 
 [和信治癌中心醫院](https://www.kfsyscc.org/) IRB（人體試驗委員會）送審文件自動化產生工具。
 
-填入 YAML 設定檔中的研究資料，執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。
+用純文字寫下研究資料（`config.toml` 放結構化資料、`cv.toml` 放研究團隊、`中文計畫摘要.md` 放計畫內容），執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。
 
 [English README](README.md)
 
@@ -73,11 +73,10 @@ git clone https://github.com/htlin222/irb-in-hurry.git
 cd irb-in-hurry
 make setup
 
-# 2. 編輯 config.yml 填入研究資料
-#    （或複製範例設定）
-cp tests/fixtures/sample_retrospective.yml config.yml
-#    完整範例（含填好的中文計畫摘要：HER2 低表現 T-DXd vs 化療 PSM）：
-#    cp tests/fixtures/example_tdxd_her2low.yml config.yml
+# 2. 從範例開始（或直接編輯 config.toml / cv.toml / 中文計畫摘要.md）
+make init EXAMPLE=tdxd-her2low      # HER2 低表現 T-DXd vs 化療 PSM，含完整中文計畫摘要
+#   make init EXAMPLE=gcsf-retrospective FORCE=1   # 亦可測試結案流程
+make check                          # 解析 @引用、檢查必填欄位
 
 # 3. 一鍵產生所有文件
 make all
@@ -90,6 +89,8 @@ make all
 | 指令 | 說明 |
 |------|------|
 | `make all` | 產生 DOCX + PDF + 排版檢查 + 儀表板 |
+| `make check` | 解析 `config.toml` 的 `@引用` 並檢查必填欄位 |
+| `make init EXAMPLE=…` | 將 `examples/` 的範例研究複製到根目錄 |
 | `make templates` | 下載官網官方空白表單（只需一次） |
 | `make validate` | 排版／字型安全檢查（A4、標楷體、Win/Mac 通用、對照官方空白表單） |
 | `make generate` | 僅產生 DOCX 表單 |
@@ -100,15 +101,17 @@ make all
 | `make test` | 執行測試 |
 | `make lint` | ruff 程式碼檢查（`make format` 自動修正） |
 | `make clean` | 清除產生的檔案 |
-| `make new` | 切換至新案審查（只改 `phase:`，保留註解）+ 產生 |
-| `make closure` | 切換至結案審查 + 產生 |
-| `make amendment` | 切換至修正案審查 + 產生 |
-| `make continuing` | 切換至期中審查 + 產生 |
+| `make closure` | 即 `make all PHASE=closure`；任何階段皆可（`new`、`amendment`、`continuing`、`sae`…），不會改寫 `config.toml` |
+| `make review` | 模擬 IRB 審查委員意見 |
+| `make set-phase PHASE=closure` | 將階段寫入 `config.toml`（只改 `phase =` 那一行，保留註解） |
 
 ### 工作流程
 
 ```
-config.yml → generate_all.py → output/*.docx → convert.py → output/*.pdf
+config.toml ─┬─ @cv.toml
+             └─ @中文計畫摘要.md
+     ↓
+config.py → generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
 output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
@@ -116,34 +119,58 @@ output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
                                                  → output/preview/compare/*.png
 ```
 
-1. **編輯 `config.yml`** — 填入研究基本資料（IRB 編號、計畫名稱、主持人、日期、研究類型）
+1. **編輯純文字來源** — `config.toml`（IRB 編號、計畫名稱、日期、研究類型）、
+   `cv.toml`（主持人／共同主持人）、`中文計畫摘要.md`（背景、目的、方法…）；執行 `make check`
 2. **`make all`** — 產生 DOCX、轉換 PDF、顯示儀表板
 3. **排版安全檢查** — `make validate` 必須 0 錯誤；查看 `output/layout_report.md`
    與 `output/preview/compare/*.png`（左：官方空白表單，右：產生結果）
 4. **以 PDF 交件** — 字型已嵌入，Windows 與 Mac 顯示一致；IRB 需修改時才附 DOCX
 5. **完成手動步驟** — 簽名、附上計畫書、email 至 irb@kfsyscc.org
 
-### 設定檔結構
+### 單一資料來源（SSOT）
 
-```yaml
-study:
-  irb_no: "20250801A"           # IRB 編號
-  title_zh: "研究中文標題"        # 中文計畫名稱
-  title_en: "English Title"     # 英文計畫名稱
-  type: retrospective           # retrospective|prospective|clinical_trial
-  review_type: expedited        # exempt|expedited|full_board
+表單所需的一切都是純文字。`config.toml` 存放結構化資料；任何寫成 `"@檔案"` 或
+`"@檔案#鍵"` 的值，都會被該檔案的內容取代，讓文字與人員資料各自用最適合的格式維護：
 
-pi:
-  name: "林協霆"                 # 計畫主持人
-  dept: "腫瘤內科部／醫師"        # 單位／職稱
-  email: "htlin222@kfsyscc.org"
+```toml
+# config.toml
+phase    = "new"                 # new | amendment | continuing | closure | sae | …
+pi       = "@cv.toml#pi"
+co_pi    = "@cv.toml#co_pi"
+proposal = "@中文計畫摘要.md"
 
-subjects:
-  planned_n: 300                # 預計收錄人數
-  consent_waiver: true          # 回溯性研究自動設為 true
+[study]
+irb_no      = ""                 # 核發前留空
+title_zh    = "研究中文標題"
+title_en    = "English Title"
+type        = "retrospective"    # retrospective | prospective | clinical_trial | genetic
+review_type = "expedited"        # exempt | expedited | full_board
 
-phase: new                     # new|amendment|continuing|closure|sae|...
+[subjects]
+planned_n      = 300
+consent_waiver = true
 ```
+
+```toml
+# cv.toml — 跨研究重複使用
+[pi]
+name  = "林協霆"                  # 計畫主持人
+dept  = "腫瘤內科部／醫師"         # 單位／職稱
+email = "htlin222@kfsyscc.org"
+```
+
+```markdown
+<!-- 中文計畫摘要.md — 每個 ## 標題對應官方表單的一個章節 -->
+## 研究背景
+荷爾蒙受體陽性乳癌……（換行會自動接合，中文之間不留空白）
+
+## 納入條件
+- 年滿20歲……
+- 轉移後曾接受CDK4/6抑制劑……
+```
+
+其他長篇文字也同樣處理，例如 `change_description = "@修正說明.md"`。
+完整欄位說明見 [config-schema](.claude/skills/irb/references/config-schema.md)。
 
 ### 研究類型 → 表單選取
 
@@ -160,13 +187,12 @@ phase: new                     # new|amendment|continuing|closure|sae|...
 make test
 ```
 
-15 項測試涵蓋表單選取邏輯、DOCX 內容驗證、清單產生，以及新案與結案的端對端產生測試。
+測試涵蓋設定檔載入與 `@引用`、表單選取邏輯、DOCX 內容驗證、清單產生，以及新案與結案的端對端產生測試。
 
 ## 系統需求
 
-- Python 3.10+
+- Python 3.11+（以標準函式庫 `tomllib` 讀取 TOML）
 - [python-docx](https://python-docx.readthedocs.io/) — DOCX 產生
-- [PyYAML](https://pyyaml.org/) — 設定檔解析
 - [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF 轉換（`brew install --cask libreoffice`；Windows：`winget install TheDocumentFoundation.LibreOffice`；Linux：`apt install libreoffice-writer fonts-arphic-ukai`）
 - [poppler](https://poppler.freedesktop.org/) — PDF→PNG 預覽（`brew install poppler`）
 

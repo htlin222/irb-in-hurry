@@ -111,7 +111,7 @@ def check_completeness(config, output_dir, form_texts):
     dates_blank = not config["dates"].get("study_start") or not config["dates"].get("study_end")
     if dates_blank:
         results.append(("dates_present", False, "Study start or end date is blank"))
-        findings.append(("required", "Study dates (start/end) must be specified in config.yml"))
+        findings.append(("required", "Study dates (start/end) must be specified in config.toml [dates]"))
     else:
         results.append(("dates_present", True, f"Study period: {config['dates']['study_start']} — {config['dates']['study_end']}"))
 
@@ -225,7 +225,7 @@ def check_privacy(config, form_texts):
         results.append(("retention_period", True, f"Data retention: {retention} years"))
     else:
         results.append(("retention_period", False, "Data retention period not specified"))
-        findings.append(("required", "Specify data retention period in config.yml closure.data_safety.retention_years"))
+        findings.append(("required", "Specify data retention period in config.toml [closure.data_safety].retention_years"))
 
     personnel = data_safety.get("authorized_personnel")
     if personnel:
@@ -396,12 +396,12 @@ def check_rules_of_thumb(config, form_texts):
     return findings
 
 
-def run_review(config_path="config.yml", output_dir="output"):
+def run_review(config_path="config.toml", output_dir="output", phase=None):
     """Run full review and generate opinion markdown."""
-    config = load_config(config_path)
+    config = load_config(config_path, phase)
     irb_no = config["study"]["irb_no"]
     phase = config["phase"]
-    phase_zh = PHASE_NAMES.get(phase, phase)
+    phase_zh = PHASE_NAMES[phase]
 
     # Load all generated DOCX files
     docx_files = sorted(glob.glob(os.path.join(output_dir, "*.docx")))
@@ -580,9 +580,9 @@ def run_review(config_path="config.yml", output_dir="output"):
 
 
 if __name__ == "__main__":
-    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.yml"
+    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.toml"
     output_dir = sys.argv[2] if len(sys.argv) > 2 else "output"
     try:
-        run_review(config_path, output_dir)
+        run_review(config_path, output_dir, phase=os.environ.get("PHASE") or None)
     except (ConfigError, FileNotFoundError) as e:
         sys.exit(f"✗ {e}")

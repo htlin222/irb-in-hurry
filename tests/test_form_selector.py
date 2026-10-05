@@ -1,15 +1,14 @@
 """Tests for form_selector.py."""
 
 import pytest
-import yaml
 
+from scripts.config import load_config
 from scripts.form_selector import FORM_REGISTRY, get_generator, select_forms
 
 
 @pytest.fixture
 def retro_config():
-    with open("tests/fixtures/sample_retrospective.yml") as f:
-        return yaml.safe_load(f)
+    return load_config("examples/gcsf-retrospective/config.toml")
 
 
 def test_retrospective_new_case_selects_correct_forms(retro_config):
