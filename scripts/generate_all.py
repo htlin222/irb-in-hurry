@@ -1,85 +1,120 @@
 #!/usr/bin/env python3
-"""Main orchestrator: load config → select forms → generate all → update checklist."""
+"""Main orchestrator: load config → select forms → generate all → update checklist.
+
+Usage: uv run python scripts/generate_all.py [config.yml] [--output DIR] [--phase PHASE]
+"""
+import argparse
+import glob
 import os
 import sys
+import traceback
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.docx_utils import load_config, apply_official_page_setup
-from scripts.form_selector import select_forms, load_generator
 from scripts.checklist import generate_checklist
+from scripts.config import ConfigError, load_config
+from scripts.docx_utils import apply_official_page_setup
+from scripts.form_selector import PHASE_FORMS, PHASE_NAMES, get_generator, load_generator, select_forms
 from scripts.institution import activate
 
 
-def main(config_path="config.yml", output_dir="output"):
-    """Generate all required IRB forms based on config."""
-    config = load_config(config_path)
+def generate_form(form_id, config, output_dir):
+    """Run one form's generator and normalize its page setup. Returns the DOCX path."""
+    path = load_generator(form_id)(config, output_dir)
+    apply_official_page_setup(path)
+    return path
+
+
+def main(config_path="config.yml", output_dir="output", phase=None, verbose=False,
+         checklist_path="checklist.md"):
+    """Generate all required IRB forms based on config. Returns a process exit code."""
+    try:
+        config = load_config(config_path)
+    except FileNotFoundError:
+        print(f"✗ {config_path} not found — copy a fixture from tests/fixtures/ to start")
+        return 2
+    except ConfigError as e:
+        print(f"✗ {e}")
+        return 2
     inst = activate(config)
+    if phase:
+        if phase not in PHASE_FORMS:
+            print(f"✗ institution {inst.id!r} has no phase {phase!r} (have: {', '.join(PHASE_FORMS)})")
+            return 2
+        config["phase"] = phase
     os.makedirs(output_dir, exist_ok=True)
 
-    # Phase name mapping
-    phase_names = {
-        "new": "新案審查", "amendment": "修正案審查", "re_review": "複審案審查",
-        "continuing": "期中審查", "closure": "結案審查", "sae": "嚴重不良反應事件審查",
-        "ib_update": "主持人手冊更新", "import": "專案進口審查",
-        "suspension": "計畫暫停/提前終止", "appeal": "申覆案審查",
-    }
-
     phase = config["phase"]
-    phase_zh = phase_names.get(phase, phase)
-    irb_no = config["study"]["irb_no"]
+    phase_zh = PHASE_NAMES.get(phase, phase)
+    irb_no = config["study"]["irb_no"] or "（尚未取得）"
 
-    print(f"╔══════════════════════════════════════════════╗")
-    print(f"║  IRB-in-Hurry Form Generator                ║")
-    print(f"╠══════════════════════════════════════════════╣")
-    print(f"║  IRB:     {inst.id:<34}║")
-    print(f"║  IRB No:  {irb_no:<34}║")
-    print(f"║  Phase:   {phase_zh:<34}║")
-    print(f"╚══════════════════════════════════════════════╝")
+    print("╔══════════════════════════════════════════════╗")
+    print("║  IRB-in-Hurry Form Generator                 ║")
+    print("╠══════════════════════════════════════════════╣")
+    print(f"  IRB:     {inst.id}")
+    print(f"  IRB No:  {irb_no}")
+    print(f"  Phase:   {phase_zh} ({phase})")
+    print("╚══════════════════════════════════════════════╝")
     print()
 
-    # Select required forms
     forms = select_forms(config)
     print(f"Selected {len(forms)} forms for {phase_zh}:")
     for fid, name_zh in forms:
         print(f"  → {fid} {name_zh}")
     print()
 
-    # Generate each form
     results = []  # (form_id, name_zh, path_or_None, status)
     for fid, name_zh in forms:
+        if get_generator(fid) is None:
+            print(f"  ⚠ {fid} {name_zh} — no generator registered")
+            results.append((fid, name_zh, None, "missing"))
+            continue
         try:
-            gen_func = load_generator(fid)
-            if gen_func is None:
-                print(f"  ⚠ {fid} {name_zh} — no generator registered")
-                results.append((fid, name_zh, None, "missing"))
-                continue
-            path = gen_func(config, output_dir)
-            apply_official_page_setup(path)
-            print(f"  ■ {fid} {name_zh} → {os.path.basename(path)}")
-            results.append((fid, name_zh, path, "generated"))
+            path = generate_form(fid, config, output_dir)
         except Exception as e:
-            print(f"  ✗ {fid} {name_zh} — ERROR: {e}")
+            print(f"  ✗ {fid} {name_zh} — ERROR: {type(e).__name__}: {e}")
+            if verbose:
+                traceback.print_exc()
             results.append((fid, name_zh, None, "error"))
+            continue
+        print(f"  ■ {fid} {name_zh} → {os.path.basename(path)}")
+        results.append((fid, name_zh, path, "generated"))
 
-    # Generate checklist
-    checklist_path = generate_checklist(config, results, phase_zh)
+    generate_checklist(config, results, phase_zh, checklist_path)
+
+    # Forms left over from an earlier run (e.g. another phase) would otherwise
+    # be converted, validated and reviewed as if they belonged to this one.
+    fresh = {os.path.abspath(p) for _, _, p, _ in results if p}
+    stale = sorted(os.path.basename(p) for p in glob.glob(os.path.join(output_dir, "*.docx"))
+                   if os.path.abspath(p) not in fresh)
+    if stale:
+        print(f"\n⚠ {len(stale)} DOCX in {output_dir}/ not produced by this run (run `make clean` to drop):")
+        for name in stale:
+            print(f"    {name}")
     print(f"\n■ Checklist written to {checklist_path}")
 
-    # Summary
-    generated = sum(1 for _, _, _, s in results if s == "generated")
-    errors = sum(1 for _, _, _, s in results if s == "error")
-    missing = sum(1 for _, _, _, s in results if s == "missing")
+    generated = sum(1 for *_, s in results if s == "generated")
+    errors = sum(1 for *_, s in results if s == "error")
+    missing = sum(1 for *_, s in results if s == "missing")
     print(f"\n{'═' * 46}")
     print(f"  Generated: {generated}  Errors: {errors}  Missing: {missing}")
     print(f"  Output:    {os.path.abspath(output_dir)}/")
+    if errors and not verbose:
+        print("  Re-run with --verbose for full tracebacks")
     print(f"{'═' * 46}")
+    return 1 if errors else 0
 
-    if errors > 0:
-        sys.exit(1)
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Generate IRB forms from config.yml")
+    parser.add_argument("config", nargs="?", default="config.yml", help="study config (default: config.yml)")
+    parser.add_argument("-o", "--output", default="output", help="output directory (default: output)")
+    parser.add_argument("--phase", choices=list(PHASE_NAMES), help="override `phase` from the config")
+    parser.add_argument("-v", "--verbose", action="store_true", help="print tracebacks for failed forms")
+    return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
-    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.yml"
-    main(config_path)
+    args = parse_args()
+    sys.exit(main(args.config, args.output, args.phase, args.verbose))

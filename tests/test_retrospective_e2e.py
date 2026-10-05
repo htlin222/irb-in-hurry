@@ -1,12 +1,15 @@
-"""End-to-end test: retrospective study → generate all forms → validate output."""
-import pytest
-import yaml
+"""End-to-end tests: config → selected forms → DOCX files."""
+import glob
 import os
-import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from scripts.form_selector import select_forms
+import pytest
+from docx import Document
+
+from scripts import generate_all
 from scripts.docx_utils import load_config
+from scripts.form_selector import FORM_REGISTRY, PHASE_FORMS, get_generator, select_forms
+
+FIXTURES = sorted(glob.glob("tests/fixtures/*.yml"))
 
 
 @pytest.fixture
@@ -16,105 +19,76 @@ def retro_config():
 
 @pytest.fixture
 def output_dir(tmp_path):
-    return str(tmp_path / "output")
+    path = tmp_path / "output"
+    path.mkdir()
+    return str(path)
+
+
+def docx_text(path):
+    """All paragraph and table-cell text of a DOCX."""
+    doc = Document(path)
+    parts = [p.text for p in doc.paragraphs]
+    parts += [cell.text for table in doc.tables for row in table.rows for cell in row.cells]
+    return "\n".join(parts)
+
+
+def generate_phase(config, phase, output_dir):
+    config["phase"] = phase
+    paths = []
+    for fid, _ in select_forms(config):
+        path = generate_all.generate_form(fid, config, output_dir)
+        assert os.path.getsize(path) > 0, f"{fid} file is empty: {path}"
+        paths.append(path)
+    return paths
+
+
+@pytest.mark.parametrize("form_id", sorted(FORM_REGISTRY))
+def test_every_registered_generator_runs(form_id, retro_config, output_dir):
+    """Each registry entry points at an importable function that writes a DOCX."""
+    assert get_generator(form_id) is not None
+    path = generate_all.generate_form(form_id, retro_config, output_dir)
+    assert os.path.exists(path)
+
+
+@pytest.mark.parametrize("phase", sorted(PHASE_FORMS))
+@pytest.mark.parametrize("fixture", FIXTURES, ids=os.path.basename)
+def test_generate_all_every_fixture_and_phase(fixture, phase, tmp_path):
+    """The orchestrator succeeds for every shipped fixture in every phase."""
+    out = tmp_path / "output"
+    code = generate_all.main(fixture, str(out), phase=phase, checklist_path=str(tmp_path / "checklist.md"))
+    assert code == 0
+    assert len(list(out.glob("*.docx"))) == len(select_forms(load_config(fixture) | {"phase": phase}))
 
 
 def test_new_case_generates_all_forms(retro_config, output_dir):
-    """Generate new case forms and verify all files created."""
-    import importlib
-    from scripts.form_selector import get_generator
-
-    retro_config["phase"] = "new"
-    os.makedirs(output_dir, exist_ok=True)
-
-    forms = select_forms(retro_config)
-    generated = []
-    for fid, name_zh in forms:
-        gen_info = get_generator(fid)
-        assert gen_info is not None, f"No generator for {fid}"
-        mod_path, func_name = gen_info
-        mod = importlib.import_module(f"scripts.{mod_path}")
-        gen_func = getattr(mod, func_name)
-        path = gen_func(retro_config, output_dir)
-        assert os.path.exists(path), f"{fid} file not created: {path}"
-        assert os.path.getsize(path) > 0, f"{fid} file is empty: {path}"
-        generated.append(path)
-
-    assert len(generated) == 6  # SF001, SF002, SF094, PROPOSAL, SF003, SF005
+    paths = generate_phase(retro_config, "new", output_dir)
+    assert len(paths) == 6  # SF001, SF002, SF094, PROPOSAL, SF003, SF005
 
 
 def test_closure_generates_all_forms(retro_config, output_dir):
-    """Generate closure forms and verify all files created."""
-    import importlib
-    from scripts.form_selector import get_generator
+    paths = generate_phase(retro_config, "closure", output_dir)
+    assert len(paths) == 4  # SF036, SF037, SF038, SF023
 
-    retro_config["phase"] = "closure"
-    os.makedirs(output_dir, exist_ok=True)
 
-    forms = select_forms(retro_config)
-    generated = []
-    for fid, name_zh in forms:
-        gen_info = get_generator(fid)
-        assert gen_info is not None, f"No generator for {fid}"
-        mod_path, func_name = gen_info
-        mod = importlib.import_module(f"scripts.{mod_path}")
-        gen_func = getattr(mod, func_name)
-        path = gen_func(retro_config, output_dir)
-        assert os.path.exists(path), f"{fid} file not created: {path}"
-        assert os.path.getsize(path) > 0, f"{fid} file is empty: {path}"
-        generated.append(path)
-
-    assert len(generated) == 4  # SF036, SF037, SF038, SF023
+def test_generate_all_reports_bad_config(tmp_path, capsys):
+    bad = tmp_path / "config.yml"
+    bad.write_text("phase: new\nstudy: {}\npi: {}\n", encoding="utf-8")
+    assert generate_all.main(str(bad), str(tmp_path / "out")) == 2
+    assert "study.title_zh" in capsys.readouterr().out
+    assert generate_all.main(str(tmp_path / "missing.yml"), str(tmp_path / "out")) == 2
 
 
 def test_docx_contains_irb_number(retro_config, output_dir):
-    """Verify generated DOCX files contain the IRB number."""
-    import importlib
-    from scripts.form_selector import get_generator
-    from docx import Document
-
-    retro_config["phase"] = "new"
-    os.makedirs(output_dir, exist_ok=True)
-
-    gen_info = get_generator("SF001")
-    mod = importlib.import_module(f"scripts.{gen_info[0]}")
-    path = getattr(mod, gen_info[1])(retro_config, output_dir)
-
-    doc = Document(path)
-    all_text = "\n".join(p.text for p in doc.paragraphs)
-    # Also check tables
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                all_text += "\n" + cell.text
-
-    assert "20250801A" in all_text, "IRB number not found in SF001"
+    path = generate_all.generate_form("SF001", retro_config, output_dir)
+    assert "20250801A" in docx_text(path), "IRB number not found in SF001"
 
 
 def test_docx_contains_pi_name(retro_config, output_dir):
-    """Verify generated DOCX contains PI name."""
-    import importlib
-    from scripts.form_selector import get_generator
-    from docx import Document
-
-    retro_config["phase"] = "new"
-    os.makedirs(output_dir, exist_ok=True)
-
-    gen_info = get_generator("SF002")
-    mod = importlib.import_module(f"scripts.{gen_info[0]}")
-    path = getattr(mod, gen_info[1])(retro_config, output_dir)
-
-    doc = Document(path)
-    all_text = "\n".join(p.text for p in doc.paragraphs)
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                all_text += "\n" + cell.text
-
-    assert "林協霆" in all_text, "PI name not found in SF002"
+    path = generate_all.generate_form("SF002", retro_config, output_dir)
+    assert "林協霆" in docx_text(path), "PI name not found in SF002"
 
 
-def test_checklist_generation(retro_config, output_dir, tmp_path):
+def test_checklist_generation(retro_config, tmp_path):
     """Verify checklist.md is generated correctly."""
     from scripts.checklist import generate_checklist
 
@@ -148,11 +122,9 @@ def test_config_validation():
 
 def test_proposal_summary_uses_config_text(output_dir):
     """proposal.* text fills 中文計畫摘要; absent keys keep the placeholder."""
-    from docx import Document
     from scripts.generators.proposal import generate_proposal_summary
 
     config = load_config("tests/fixtures/example_tdxd_her2low.yml")
-    os.makedirs(output_dir, exist_ok=True)
     text = "\n".join(p.text for p in Document(
         generate_proposal_summary(config, output_dir)).paragraphs)
     assert "DESTINY-Breast04" in text

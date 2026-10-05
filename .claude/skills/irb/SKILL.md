@@ -149,11 +149,13 @@ institutions/<id>/
 templates/<id>/                # official blank forms (gitignored ground truth)
 scripts/
   institution.py              # active profile loader
+  config.py                   # Load + validate config.yml (raises ConfigError listing every problem)
   template_fill.py            # generic fill-the-blank generator
   onboard.py                  # blanks → draft profile/forms/inventory
   docx_utils.py               # Shared DOCX helpers (init_doc, add_p, add_ct, etc.)
   form_selector.py            # Phase + study type -> required forms
-  generate_all.py             # Main orchestrator
+  generate_all.py             # Main orchestrator (--phase, --output, --verbose)
+  set_phase.py                # Switch phase in config.yml, keeping comments
   checklist.py                # Generates checklist.md with status
   convert.py                  # DOCX -> PDF -> PNG pipeline
   generators/                 # KFSYSCC rebuild generators (reference pack)

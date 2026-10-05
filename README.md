@@ -156,9 +156,11 @@ make all
 | `make pdf` | Convert DOCX to PDF + PNG previews |
 | `make dashboard` | Show submission status |
 | `make checklist` | View ■/□ checklist |
+| `make review` | Simulated IRB reviewer on generated forms |
 | `make test` | Run pytest |
+| `make lint` | Lint with ruff (`make format` auto-fixes) |
 | `make clean` | Remove generated files |
-| `make new` | Switch to new case phase + generate |
+| `make new` | Switch to new case phase (edits `phase:` only, comments kept) + generate |
 | `make closure` | Switch to closure phase + generate |
 | `make amendment` | Switch to amendment phase + generate |
 | `make continuing` | Switch to continuing review + generate |
@@ -256,11 +258,13 @@ irb-in-hurry/
 ├── docs/                      # METHODOLOGY.md, ONBOARDING.md
 ├── scripts/
 │   ├── institution.py         # Active institution profile
+│   ├── config.py              # Load + validate config.yml (clear errors, defaults)
 │   ├── template_fill.py       # Generic fill-the-blank generator
 │   ├── onboard.py             # Blanks → draft profile / forms / inventory
 │   ├── docx_utils.py          # Shared DOCX helpers
 │   ├── form_selector.py       # Phase routing over the active form pack
-│   ├── generate_all.py        # Main orchestrator
+│   ├── generate_all.py        # Main orchestrator (--phase, --output, --verbose)
+│   ├── set_phase.py           # Switch phase in config.yml, keeping comments
 │   ├── checklist.py           # ■/□ checklist generator
 │   ├── convert.py             # DOCX→PDF→PNG pipeline
 │   ├── fetch_templates.py     # Scrape or index official blank forms

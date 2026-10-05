@@ -20,7 +20,6 @@ profile (institutions/<id>/profile.yml); blanks are cached by `make templates`.
 Usage: uv run python scripts/validate_layout.py [output_dir] [--no-render] [--strict]
 """
 import glob
-import json
 import os
 import re
 import shutil
@@ -73,7 +72,11 @@ def page_setup(doc):
     """First section's page size/margins in twips."""
     sect = doc.sections[0]._sectPr
     sz, mar = sect.find(qn("w:pgSz")), sect.find(qn("w:pgMar"))
-    get = lambda el, a: int(el.get(qn(f"w:{a}"))) if el is not None and el.get(qn(f"w:{a}")) else None
+
+    def get(el, attr):
+        val = el.get(qn(f"w:{attr}")) if el is not None else None
+        return int(val) if val else None
+
     return {
         "width": get(sz, "w"), "height": get(sz, "h"),
         "orient": sz.get(qn("w:orient")) if sz is not None else None,
@@ -158,12 +161,12 @@ def check_page(doc, tpl_doc, fid, rep):
         rep.warn("頁面為橫向 (landscape)")
     size = (g["width"], g["height"])
     ref_size = (current().page["width"], current().page["height"])
-    ref_margins = dict(zip(MARGIN_KEYS, official_margins(fid)))
+    ref_margins = dict(zip(MARGIN_KEYS, official_margins(fid), strict=True))
     if tpl_doc is not None:
         t = page_setup(tpl_doc)
         ref_size = (t["width"], t["height"])
         ref_margins = {k: t[k] for k in MARGIN_KEYS}
-    if any(v is None for v in size) or any(abs(a - b) > PAGE_TOL for a, b in zip(sorted(size), sorted(ref_size))):
+    if any(v is None for v in size) or any(abs(a - b) > PAGE_TOL for a, b in zip(sorted(size), sorted(ref_size), strict=True)):
         rep.error(f"紙張大小 {fmt_cm(size)} ≠ 官方表單 {fmt_cm(ref_size)}（紙張不符會在 Win/Mac 列印時縮放跑版）")
     off = [f"{k} {g[k] / 567:.2f}→{ref_margins[k] / 567:.2f}cm" for k in MARGIN_KEYS
            if g[k] is None or ref_margins[k] is None or abs(g[k] - ref_margins[k]) > MARGIN_TOL]
@@ -262,7 +265,7 @@ def check_labels(doc, tpl_doc, rep):
     if not labels:
         return
     gen = _norm(all_text(doc))
-    missing = [l for l in labels if _norm(l) not in gen]
+    missing = [label for label in labels if _norm(label) not in gen]
     cov = 1 - len(missing) / len(labels)
     msg = f"官方表單文字涵蓋率 {cov:.0%}（{len(labels) - len(missing)}/{len(labels)}）"
     if cov < LABEL_COVERAGE_WARN:

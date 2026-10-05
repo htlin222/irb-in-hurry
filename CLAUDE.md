@@ -35,12 +35,14 @@ make onboard INST=<id>            # New institution: blanks in templates/<id>/ �
 
 - `institutions/<id>/` — profile.yml, forms.py, form_inventory.md (one folder per committee)
 - `scripts/institution.py` — Active profile loader
+- `scripts/config.py` — Load + validate `config.yml`; required fields, enums, real booleans, defaults for optional sections
 - `scripts/template_fill.py` — Generic fill-the-blank generator (labels → values, □ → ■)
 - `scripts/onboard.py` — Blank forms → draft profile + forms.py + inventory
-- `scripts/docx_utils.py` — Shared DOCX helpers (profile-aware)
-- `scripts/form_selector.py` — Phase + study type → required forms (active pack)
+- `scripts/docx_utils.py` — Shared DOCX helpers (profile-aware; `form_filename` for output names)
+- `scripts/form_selector.py` — Phase + study type → required forms (active pack); shared `PHASE_NAMES`
 - `scripts/generators/` — KFSYSCC rebuild generators (reference pack)
-- `scripts/generate_all.py` — Main orchestrator
+- `scripts/generate_all.py` — Main orchestrator (`--phase`, `--output`, `--verbose`)
+- `scripts/set_phase.py` — Switch `phase:` in config.yml without losing comments
 - `scripts/checklist.py` — ■/□ checklist generator
 - `scripts/convert.py` — DOCX→PDF→PNG pipeline
 - `scripts/fetch_templates.py` — Scrape or index official blanks → `templates/<id>/`
@@ -52,5 +54,11 @@ make onboard INST=<id>            # New institution: blanks in templates/<id>/ �
 ```bash
 cp tests/fixtures/sample_retrospective.yml config.yml
 make all
-make test
+make test   # every fixture × every phase, config validation, layout gate
+make lint   # ruff; CI runs both on every PR
 ```
+
+New generator: add it to `FORM_REGISTRY` in `institutions/<id>/forms.py`; the e2e matrix
+picks it up automatically. New config field: document it in
+`.claude/skills/irb/references/config-schema.md`, and add it to `DEFAULTS` /
+`BOOL_FIELDS` in `scripts/config.py` if generators index it directly.

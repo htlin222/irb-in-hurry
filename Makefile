@@ -1,4 +1,5 @@
-.PHONY: help setup generate pdf preview dashboard checklist review clean test all templates validate onboard
+.PHONY: help setup generate pdf dashboard checklist review clean test lint format all templates validate \
+        onboard new closure amendment continuing
 
 CONFIG := config.yml
 OUTPUT := output
@@ -11,7 +12,7 @@ setup: ## Install dependencies
 	uv sync
 
 generate: ## Generate DOCX forms from config.yml
-	$(RUN) python scripts/generate_all.py $(CONFIG)
+	$(RUN) python scripts/generate_all.py $(CONFIG) --output $(OUTPUT)
 
 pdf: ## Convert DOCX → PDF + PNG previews
 	$(RUN) python scripts/convert.py $(OUTPUT)
@@ -29,32 +30,38 @@ validate: ## Layout/font safety gate vs the institution's blank forms (Win/Mac)
 all: generate pdf validate dashboard ## Generate + convert + validate + dashboard
 
 dashboard: ## Show submission status
-	./dashboard.sh $(CONFIG)
+	./dashboard.sh $(CONFIG) $(OUTPUT)
 
 checklist: ## View checklist
 	@cat checklist.md
 
 review: ## Run simulated IRB reviewer on generated forms
-	$(RUN) python scripts/reviewer.py $(CONFIG)
+	$(RUN) python scripts/reviewer.py $(CONFIG) $(OUTPUT)
 
 test: ## Run tests
-	$(RUN) pytest tests/ -v
+	$(RUN) pytest -v
+
+lint: ## Lint Python sources
+	$(RUN) ruff check .
+
+format: ## Auto-fix lint issues (imports, etc.)
+	$(RUN) ruff check --fix .
 
 clean: ## Remove generated files
-	rip $(OUTPUT)/*.docx $(OUTPUT)/*.pdf $(OUTPUT)/preview/*.png 2>/dev/null; true
+	rm -rf $(OUTPUT)/*.docx $(OUTPUT)/*.pdf $(OUTPUT)/preview $(OUTPUT)/layout_report.md checklist.md
 
 new: ## Set phase to new case + generate
-	$(RUN) python -c "import yaml; c=yaml.safe_load(open('$(CONFIG)')); c['phase']='new'; yaml.dump(c,open('$(CONFIG)','w'),allow_unicode=True,default_flow_style=False,sort_keys=False)"
+	$(RUN) python scripts/set_phase.py new $(CONFIG)
 	$(MAKE) all
 
 closure: ## Set phase to closure + generate
-	$(RUN) python -c "import yaml; c=yaml.safe_load(open('$(CONFIG)')); c['phase']='closure'; yaml.dump(c,open('$(CONFIG)','w'),allow_unicode=True,default_flow_style=False,sort_keys=False)"
+	$(RUN) python scripts/set_phase.py closure $(CONFIG)
 	$(MAKE) all
 
 amendment: ## Set phase to amendment + generate
-	$(RUN) python -c "import yaml; c=yaml.safe_load(open('$(CONFIG)')); c['phase']='amendment'; yaml.dump(c,open('$(CONFIG)','w'),allow_unicode=True,default_flow_style=False,sort_keys=False)"
+	$(RUN) python scripts/set_phase.py amendment $(CONFIG)
 	$(MAKE) all
 
 continuing: ## Set phase to continuing review + generate
-	$(RUN) python -c "import yaml; c=yaml.safe_load(open('$(CONFIG)')); c['phase']='continuing'; yaml.dump(c,open('$(CONFIG)','w'),allow_unicode=True,default_flow_style=False,sort_keys=False)"
+	$(RUN) python scripts/set_phase.py continuing $(CONFIG)
 	$(MAKE) all

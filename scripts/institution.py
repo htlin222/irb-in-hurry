@@ -68,7 +68,8 @@ class Profile:
         return None
 
 
-def _id_from_config_file(path=os.path.join(ROOT, "config.yml")):
+def _id_from_config_file(path=None):
+    path = path or os.path.join(ROOT, "config.yml")
     try:
         with open(path, encoding="utf-8") as f:
             return (yaml.safe_load(f) or {}).get("institution")

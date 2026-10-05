@@ -4,11 +4,21 @@ Generates SF036, SF037, SF038, SF023 forms from config dict.
 """
 import os
 
-from scripts.docx_utils import *
-from docx.shared import Pt, Cm
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    check,
+    init_doc,
+    institution,
+    set_cell_shading,
+)
 
 # ---------------------------------------------------------------------------
 # SF036 — 結案審查送審資料表
@@ -204,7 +214,7 @@ def generate_sf037(config, output_dir):
     add_p(doc, "七、計畫主持人聲明", bold=True, size=12, sa=Pt(6))
     add_p(doc, "本人聲明本計畫所有研究資料均已妥善保存，並已依規定完成結案相關程序。",
           size=10, sa=Pt(4))
-    add_p(doc, f"計畫主持人簽名：＿＿＿＿＿＿＿＿＿＿　日期：＿＿＿＿年＿＿月＿＿日",
+    add_p(doc, "計畫主持人簽名：＿＿＿＿＿＿＿＿＿＿　日期：＿＿＿＿年＿＿月＿＿日",
           size=10, sa=Pt(12))
 
     # ---- 八、聯絡人資訊 ----
@@ -253,7 +263,6 @@ def generate_sf037(config, output_dir):
 def generate_sf038(config, output_dir):
     """Generate SF038: closure report document (template structure)."""
     doc = init_doc(sz=12)
-    study = config["study"]
     dates = config["dates"]
 
     # ---- Cover page ----

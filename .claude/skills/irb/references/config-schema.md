@@ -18,6 +18,12 @@ font) are **not** config: they live in `institutions/<id>/profile.yml`.
 When onboarding a new institution needs a field that isn't listed here, add it
 under the matching section below and document it in this file.
 
+`scripts/config.py` validates it on load and lists every problem at once: missing
+required fields, an unknown `institution`, a `phase` the institution's form pack
+doesn't route, unknown `study.type` / `study.review_type`, and quoted
+booleans (`"false"` is a non-empty string and would count as true). Optional
+sections may be omitted entirely.
+
 ## `study` (required)
 
 | Field | Type | Description | Example |

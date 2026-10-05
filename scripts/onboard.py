@@ -25,11 +25,12 @@ import re
 import subprocess
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from docx import Document
 from docx.oxml.ns import qn
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 FORM_EXTS = (".docx", ".doc")
 CODE_RE = re.compile(r"([A-Za-z]{1,5})[-_ .]?0*(\d{1,4})")
@@ -104,7 +105,9 @@ def assign_ids(files):
 def inspect(path):
     doc = Document(path)
     sect = doc.sections[0]
-    twips = lambda length: round(int(length or 0) / 635)   # EMU → twips
+    def twips(length):
+        return round(int(length or 0) / 635)   # EMU → twips
+
     info = {
         "width": twips(sect.page_width), "height": twips(sect.page_height),
         "margins": tuple(twips(getattr(sect, k)) for k in
@@ -154,8 +157,8 @@ def inspect(path):
     info["has_cjk"] = bool(CJK_RE.search(all_text))
     info["checks"] = list(dict.fromkeys(m.group(1) for m in BOX_RE.finditer(all_text)))
     info["blanks"] = list(dict.fromkeys(m.group(1) for m in BLANK_RE.finditer(all_text)))
-    info["irb_label"] = next((l for l in labels if "IRB" in l.upper() and
-                              any(k in l for k in ("編號", "No", "NO", "number"))), None)
+    info["irb_label"] = next((lbl for lbl in labels if "IRB" in lbl.upper() and
+                              any(k in lbl for k in ("編號", "No", "NO", "number"))), None)
     return info
 
 
@@ -177,7 +180,9 @@ def form_title(info, fallback):
 
 
 def write_profile(inst_id, forms, id_rule, path, force=False):
-    common = lambda key: collections.Counter(f[key] for f in forms.values() if f[key]).most_common(1)
+    def common(key):
+        return collections.Counter(f[key] for f in forms.values() if f[key]).most_common(1)
+
     size = common("width"), common("height")
     width = size[0][0][0] if size[0] else 11906
     height = size[1][0][0] if size[1] else 16838
@@ -200,7 +205,7 @@ def write_profile(inst_id, forms, id_rule, path, force=False):
         "# Review every TODO, then set `institution: " + inst_id + "` in config.yml.",
         f"id: {inst_id}",
         f"name: {name}            # TODO confirm",
-        f"name_en: TODO",
+        "name_en: TODO",
         f"committee: {committee or '人體試驗委員會'}   # TODO confirm",
         f"irb_no_label: {irb_label}",
         f"ehr_name: {name}電子病歷系統",
@@ -299,7 +304,9 @@ def write_inventory(inst_id, forms, path, force=False):
            "every checkbox a condition, and group the forms into phases.", "",
            "| Form | Title | Paper (cm) | Margins L/R/T/B (cm) | Font |",
            "|------|-------|-----------|----------------------|------|"]
-    cm = lambda v: f"{v / 567:.2f}"
+    def cm(v):
+        return f"{v / 567:.2f}"
+
     for fid, f in forms.items():
         out.append(f"| {fid} | {form_title(f, fid)} | {cm(f['width'])}×{cm(f['height'])} | "
                    f"{'/'.join(cm(m) for m in f['margins'])} | {f['font'] or '?'} |")
@@ -308,7 +315,7 @@ def write_inventory(inst_id, forms, path, force=False):
                 f"- Heading lines: {' / '.join(f['title_lines']) or '—'}",
                 f"- Fonts: CJK `{f['font']}`, Latin `{f['latin_font']}`, lang `{f['lang']}`", "",
                 "**Table labels** (empty cell to the right → value goes there)", ""]
-        out += [f"- `{l}` → {guess_field(l) or '**TODO**'}" for l in f["labels"]] or ["- —"]
+        out += [f"- `{lbl}` → {guess_field(lbl) or '**TODO**'}" for lbl in f["labels"]] or ["- —"]
         out += ["", "**Fill-in lines** (`label：＿＿＿`)", ""]
         out += [f"- `{b}` → {guess_field(b) or '**TODO**'}" for b in f["blanks"]] or ["- —"]
         out += ["", "**Checkbox options**", ""]
@@ -349,7 +356,7 @@ def main(inst_id, root=ROOT, force=False):
     ids, *id_rule = assign_ids(files)
     forms = {}
     print(f"Inspecting {len(files)} blank forms in templates/{inst_id}/ ...")
-    for fid, f in zip(ids, files):
+    for fid, f in zip(ids, files, strict=True):
         docx = to_docx(os.path.join(tpl_dir, f))
         if not docx:
             print(f"  ✗ {f}: .doc needs LibreOffice to convert — skipped")

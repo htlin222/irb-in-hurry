@@ -3,21 +3,17 @@
 Extracted from irb-close/generate_forms.py, refactored to accept config dict.
 """
 import os
-import yaml
+import re
+
 from docx import Document
-from docx.shared import Pt, Cm, Twips
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.oxml.ns import qn, nsdecls
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls, qn
+from docx.shared import Pt, Twips
 
+from scripts.config import load_config  # noqa: F401  (re-exported for older callers)
 from scripts.institution import current
-
-
-def load_config(path="config.yml"):
-    """Load and return config dict from YAML file."""
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
 
 
 def check(condition: bool) -> str:
@@ -45,8 +41,17 @@ def _page_setup():
     }
 
 
+_UNSAFE_FILENAME_RE = re.compile(r'[\\/:*?"<>|\s]+')
+
+
+def form_filename(prefix, config, fallback):
+    """'SF001_<irb_no>.docx', or 'SF001_<fallback>.docx' before an IRB number exists."""
+    irb_no = _UNSAFE_FILENAME_RE.sub("-", str(config["study"].get("irb_no") or "")).strip("-")
+    return f"{prefix}_{irb_no or fallback}.docx"
+
+
 def form_id_from_path(path):
-    """'SF002_KF-001.docx' → 'SF002'; '中文計畫摘要_proposal.docx' → 'PROPOSAL'."""
+    """'SF002_KF-001.docx' → 'SF002'; '中文計畫摘要_20250801A.docx' → 'PROPOSAL'."""
     return current().form_id(os.path.basename(path))
 
 
@@ -193,15 +198,15 @@ def set_run_font(run, font_name=None, size=12, bold=False):
     rPr.rFonts.set(qn('w:eastAsia'), font_name)
 
 
-def add_p(doc, text, bold=False, size=12, alignment=None, sa=Pt(6), sb=Pt(0)):
+def add_p(doc, text, bold=False, size=12, alignment=None, sa=None, sb=None):
     """Add a formatted paragraph to the document."""
     p = doc.add_paragraph()
     run = p.add_run(text)
     set_run_font(run, None, size, bold)
     if alignment:
         p.alignment = alignment
-    p.paragraph_format.space_after = sa
-    p.paragraph_format.space_before = sb
+    p.paragraph_format.space_after = Pt(6) if sa is None else sa
+    p.paragraph_format.space_before = Pt(0) if sb is None else sb
     return p
 
 

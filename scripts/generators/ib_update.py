@@ -6,11 +6,20 @@ SF084/SF085: 多中心信函 (multi-center letter)
 """
 import os
 
-from scripts.docx_utils import *
-from docx.shared import Pt
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    init_doc,
+    institution,
+    set_cell_shading,
+)
 
 # ---------------------------------------------------------------------------
 # SF082 — 更新主持人手冊審查送審資料表 (v5, 2025.03.03)
