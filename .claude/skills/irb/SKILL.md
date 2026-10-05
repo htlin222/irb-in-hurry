@@ -122,9 +122,11 @@ All forms use this convention via `docx_utils.check()`.
 ```
 config.yml                     # Study metadata (single source of truth)
 scripts/
+  config.py                   # Load + validate config.yml (raises ConfigError listing every problem)
   docx_utils.py               # Shared DOCX helpers (init_doc, add_p, add_ct, etc.)
   form_selector.py            # Phase + study type -> required forms
-  generate_all.py             # Main orchestrator
+  generate_all.py             # Main orchestrator (--phase, --output, --verbose)
+  set_phase.py                # Switch phase in config.yml, keeping comments
   checklist.py                # Generates checklist.md with status
   convert.py                  # DOCX -> PDF -> PNG pipeline
   generators/

@@ -23,10 +23,12 @@ make all                          # Generate + PDF + layout gate + dashboard
 
 ## Project Structure
 
-- `scripts/docx_utils.py` — Shared DOCX helper functions
+- `scripts/config.py` — Load + validate `config.yml`; required fields, enums, real booleans, defaults for optional sections
+- `scripts/docx_utils.py` — Shared DOCX helper functions (`form_filename` for output names)
 - `scripts/form_selector.py` — Phase + study type → required forms
 - `scripts/generators/` — One module per IRB category
-- `scripts/generate_all.py` — Main orchestrator
+- `scripts/generate_all.py` — Main orchestrator (`--phase`, `--output`, `--verbose`)
+- `scripts/set_phase.py` — Switch `phase:` in config.yml without losing comments
 - `scripts/checklist.py` — ■/□ checklist generator
 - `scripts/cover_letter.py` — 致委員會函稿 (polite cover letter draft per phase) → `output/IRB_致委員會函稿_<階段>.md`
 - `scripts/convert.py` — DOCX→PDF→PNG pipeline
@@ -39,5 +41,11 @@ make all                          # Generate + PDF + layout gate + dashboard
 ```bash
 cp tests/fixtures/sample_retrospective.yml config.yml
 make all
-make test
+make test   # every fixture × every phase, config validation, layout gate
+make lint   # ruff; CI runs both on every PR
 ```
+
+New generator: add it to `FORM_REGISTRY` in `form_selector.py`; the e2e matrix
+picks it up automatically. New config field: document it in
+`.claude/skills/irb/references/config-schema.md`, and add it to `DEFAULTS` /
+`BOOL_FIELDS` in `scripts/config.py` if generators index it directly.

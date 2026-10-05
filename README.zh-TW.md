@@ -97,9 +97,11 @@ make all
 | `make pdf` | 轉換為 PDF + PNG 預覽 |
 | `make dashboard` | 顯示送審狀態 |
 | `make checklist` | 檢視 ■/□ 清單 |
+| `make review` | 模擬 IRB 審查委員檢閱產生的表單 |
 | `make test` | 執行測試 |
+| `make lint` | ruff 程式碼檢查（`make format` 自動修正） |
 | `make clean` | 清除產生的檔案 |
-| `make new` | 切換至新案審查 + 產生 |
+| `make new` | 切換至新案審查（只改 `phase:`，保留註解）+ 產生 |
 | `make closure` | 切換至結案審查 + 產生 |
 | `make amendment` | 切換至修正案審查 + 產生 |
 | `make continuing` | 切換至期中審查 + 產生 |

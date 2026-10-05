@@ -18,7 +18,7 @@ def generate_checklist(config, results, phase_zh, output_path="checklist.md", le
     today = date.today().strftime("%Y-%m-%d")
 
     lines = [
-        f"# IRB Submission Checklist",
+        "# IRB Submission Checklist",
         f"## Study: {irb_no} — {title_zh}",
         f"## Phase: {phase_zh}",
         f"## Generated: {today}",
@@ -40,7 +40,7 @@ def generate_checklist(config, results, phase_zh, output_path="checklist.md", le
     lines.extend([
         "",
         "### PDF Conversion",
-        "□ Run `python scripts/convert.py` to generate PDFs and previews",
+        "□ Run `make pdf validate` to generate PDFs and pass the layout gate",
         "",
         "### Manual Steps",
     ])

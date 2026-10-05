@@ -129,9 +129,11 @@ make all
 | `make pdf` | Convert DOCX to PDF + PNG previews |
 | `make dashboard` | Show submission status |
 | `make checklist` | View ■/□ checklist |
+| `make review` | Simulated IRB reviewer on generated forms |
 | `make test` | Run pytest |
+| `make lint` | Lint with ruff (`make format` auto-fixes) |
 | `make clean` | Remove generated files |
-| `make new` | Switch to new case phase + generate |
+| `make new` | Switch to new case phase (edits `phase:` only, comments kept) + generate |
 | `make closure` | Switch to closure phase + generate |
 | `make amendment` | Switch to amendment phase + generate |
 | `make continuing` | Switch to continuing review + generate |
@@ -222,9 +224,11 @@ irb-in-hurry/
 ├── Makefile                   # Easy commands
 ├── dashboard.sh               # Status overview
 ├── scripts/
+│   ├── config.py              # Load + validate config.yml (clear errors, defaults)
 │   ├── docx_utils.py          # Shared DOCX helpers
 │   ├── form_selector.py       # 43-form registry + routing
-│   ├── generate_all.py        # Main orchestrator
+│   ├── generate_all.py        # Main orchestrator (--phase, --output, --verbose)
+│   ├── set_phase.py           # Switch phase in config.yml, keeping comments
 │   ├── checklist.py           # ■/□ checklist generator
 │   ├── cover_letter.py        # 致委員會函稿 per phase
 │   ├── convert.py             # DOCX→PDF→PNG pipeline

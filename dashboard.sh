@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # IRB Submission Dashboard
-# Usage: ./dashboard.sh [config.yml]
+# Usage: ./dashboard.sh [config.yml] [output_dir]
 
 set -euo pipefail
 
 CONFIG="${1:-config.yml}"
+OUTPUT_DIR="${2:-output}"
 CHECKLIST="checklist.md"
-OUTPUT_DIR="output"
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
 # Colors
 GREEN='\033[0;32m'
@@ -16,10 +19,9 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# Extract from config using python (handles YAML properly)
 # Use uv run if available, fallback to python3
-if command -v uv &>/dev/null && [ -f "pyproject.toml" ]; then
-    PY="uv run python"
+if command -v uv &>/dev/null && [ -f "$ROOT/pyproject.toml" ]; then
+    PY="uv run --quiet --project $ROOT python"
 elif command -v python3 &>/dev/null; then
     PY="python3"
 else
@@ -27,34 +29,32 @@ else
     exit 1
 fi
 
-if [ -f "$CONFIG" ]; then
-    eval "$($PY -c "
-import yaml, sys
-with open('$CONFIG') as f:
-    c = yaml.safe_load(f)
-print(f'IRB_NO=\"{c[\"study\"][\"irb_no\"]}\"')
-print(f'PHASE=\"{c[\"phase\"]}\"')
-print(f'TITLE=\"{c[\"study\"][\"title_zh\"][:40]}\"')
-print(f'PI=\"{c[\"pi\"][\"name\"]}\"')
-print(f'STUDY_TYPE=\"{c[\"study\"][\"type\"]}\"')
-print(f'REVIEW_TYPE=\"{c[\"study\"][\"review_type\"]}\"')
-" 2>/dev/null)" || {
-    echo "⚠ Could not parse $CONFIG"
-    exit 1
-}
-else
-    echo "⚠ python3 or $CONFIG not found"
+if [ ! -f "$CONFIG" ]; then
+    echo "⚠ $CONFIG not found"
     exit 1
 fi
 
-# Phase names
-declare -A PHASE_NAMES=(
-    [new]="新案審查" [amendment]="修正案審查" [re_review]="複審案審查"
-    [continuing]="期中審查" [closure]="結案審查" [sae]="嚴重不良反應"
-    [ib_update]="主持人手冊" [import]="專案進口" [suspension]="計畫暫停"
-    [appeal]="申覆案"
-)
-PHASE_ZH="${PHASE_NAMES[$PHASE]:-$PHASE}"
+# Read study fields through the same validated loader the generators use.
+# Values are shell-quoted, so titles containing quotes or $ are safe to eval.
+FIELDS="$($PY - "$CONFIG" <<'PY'
+import shlex, sys
+from scripts.config import load_config
+from scripts.form_selector import PHASE_NAMES
+c = load_config(sys.argv[1])
+fields = {
+    "IRB_NO": c["study"]["irb_no"] or "（尚未取得）",
+    "PHASE": c["phase"],
+    "PHASE_ZH": PHASE_NAMES.get(c["phase"], c["phase"]),
+    "TITLE": c["study"]["title_zh"][:40],
+    "PI": c["pi"]["name"],
+    "STUDY_TYPE": c["study"].get("type", ""),
+    "REVIEW_TYPE": c["study"].get("review_type", ""),
+}
+for k, v in fields.items():
+    print(f"{k}={shlex.quote(str(v))}")
+PY
+)" || { echo "⚠ Could not parse $CONFIG"; exit 1; }
+eval "$FIELDS"
 
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════╗${NC}"
@@ -68,9 +68,13 @@ echo -e "${BOLD}║${NC} Title:      ${TITLE}..."
 echo -e "${BOLD}╠══════════════════════════════════════════════╣${NC}"
 
 # Count files
-DOCX_COUNT=$(find "$OUTPUT_DIR" -maxdepth 1 -name "*.docx" 2>/dev/null | wc -l | tr -d ' ')
-PDF_COUNT=$(find "$OUTPUT_DIR" -maxdepth 1 -name "*.pdf" 2>/dev/null | wc -l | tr -d ' ')
-PNG_COUNT=$(find "$OUTPUT_DIR/preview" -name "*.png" 2>/dev/null | wc -l | tr -d ' ')
+count_files() {  # count_files DIR GLOB — 0 when DIR is missing
+    [ -d "$1" ] || { echo 0; return; }
+    find "$1" -maxdepth 1 -name "$2" | wc -l | tr -d ' '
+}
+DOCX_COUNT=$(count_files "$OUTPUT_DIR" "*.docx")
+PDF_COUNT=$(count_files "$OUTPUT_DIR" "*.pdf")
+PNG_COUNT=$(count_files "$OUTPUT_DIR/preview" "*.png")
 
 echo -e "${BOLD}║${NC} ${GREEN}■${NC} DOCX files: ${DOCX_COUNT}"
 echo -e "${BOLD}║${NC} ${GREEN}■${NC} PDF files:  ${PDF_COUNT}"
@@ -79,8 +83,9 @@ echo -e "${BOLD}╠════════════════════�
 
 # Checklist status
 if [ -f "$CHECKLIST" ]; then
-    DONE=$(grep -c '^■' "$CHECKLIST" 2>/dev/null || echo 0)
-    TODO=$(grep -c '^□' "$CHECKLIST" 2>/dev/null || echo 0)
+    # grep -c prints 0 but exits 1 when nothing matches
+    DONE=$(grep -c '^■' "$CHECKLIST" || true)
+    TODO=$(grep -c '^□' "$CHECKLIST" || true)
     TOTAL=$((DONE + TODO))
 
     if [ "$TODO" -eq 0 ] && [ "$DONE" -gt 0 ]; then

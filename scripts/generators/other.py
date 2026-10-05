@@ -4,11 +4,18 @@ Generates SF076 form from config dict.
 """
 import os
 
-from scripts.docx_utils import *
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_p,
+    apply_tb,
+    init_doc,
+    set_cell_shading,
+)
 
 # ---------------------------------------------------------------------------
 # SF076 — 閱卷複印申請登記表 (v1)
