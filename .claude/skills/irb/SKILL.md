@@ -47,6 +47,9 @@ When a user provides a study topic, proposal, or any text:
    Remind the user to submit the PDF (fonts embedded → identical on Windows/Mac).
 7. **Fix findings** -- Address required revisions from reviewer
 8. **Update checklist** -- Track manual steps via `checklist.md`
+9. **Cover letter** -- `make generate` also writes `output/IRB_致委員會函稿_<階段>.md`, a formal
+   letter to the committee for the email/paper submission. Help the user fill every
+   `【請填寫：…】` field; keep the tone 恭敬、具體, never argumentative (esp. appeals).
 
 ## Study Type Classification
 

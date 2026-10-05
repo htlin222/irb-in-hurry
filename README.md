@@ -76,6 +76,7 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 - **DOCX generation** using python-docx with proper formatting (standard KaiTi font, ■/□ checkboxes)
 - **PDF + PNG preview** pipeline for visual validation
 - **Plain-text checklist** (■/□) tracking both generated forms and manual steps
+- **Cover letter draft** (致委員會函稿) for every phase — polite, formal, filled from `config.toml`, with 【請填寫】 placeholders for what only you can write
 - **Color-coded dashboard** for submission status overview
 - **Claude Code skill** for AI-assisted form preparation
 
@@ -147,6 +148,7 @@ config.toml ─┬─ @cv.toml
 config.py → generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
+                                  output/IRB_致委員會函稿_*.md ← cover_letter.py
 output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
                                                  → output/layout_report.md
                                                  → output/preview/compare/*.png
@@ -223,7 +225,7 @@ See [config-schema reference](.claude/skills/irb/references/config-schema.md) fo
 make test
 ```
 
-Tests covering the config loader and `@references`, form selection logic, DOCX content verification, checklist generation, end-to-end generation for both new case and closure phases, and the layout safety gate.
+Tests covering the config loader and `@references`, form selection logic, DOCX content verification, checklist generation, cover letter drafts, end-to-end generation for both new case and closure phases, and the layout safety gate.
 
 ## Dependencies
 
@@ -258,6 +260,7 @@ irb-in-hurry/
 │   ├── generate_all.py        # Main orchestrator (--phase, --output, --verbose)
 │   ├── set_phase.py           # Persist phase in config.toml, keeping comments
 │   ├── checklist.py           # ■/□ checklist generator
+│   ├── cover_letter.py        # 致委員會函稿 per phase
 │   ├── convert.py             # DOCX→PDF→PNG pipeline
 │   ├── fetch_templates.py     # Download official blank forms
 │   ├── validate_layout.py     # Layout/font safety gate

@@ -43,6 +43,7 @@
 - **DOCX 產生**：使用 python-docx，標楷體字型、■/□ 勾選格式
 - **PDF + PNG 預覽**：轉檔後可視覺化驗證排版
 - **純文字清單**：■/□ 追蹤自動產生表單與手動步驟
+- **致委員會函稿**：每個送審階段附一封禮貌、恭敬、明確的送審信草稿，事實取自 `config.toml`，需本人撰寫處以【請填寫】標示
 - **彩色儀表板**：一目了然的送審進度
 - **Claude Code 技能**：AI 輔助表單準備
 
@@ -114,6 +115,7 @@ config.toml ─┬─ @cv.toml
 config.py → generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
+                                  output/IRB_致委員會函稿_*.md ← cover_letter.py
 output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
                                                  → output/layout_report.md
                                                  → output/preview/compare/*.png

@@ -3,7 +3,7 @@ import os
 from datetime import date
 
 
-def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
+def generate_checklist(config, results, phase_zh, output_path="checklist.md", letter_path=None):
     """Generate checklist.md from generation results.
 
     Args:
@@ -11,6 +11,7 @@ def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
         results: list of (form_id, name_zh, path_or_None, status)
         phase_zh: Chinese phase name
         output_path: Where to write checklist
+        letter_path: Cover letter draft to review before emailing (optional)
     """
     irb_no = config["study"]["irb_no"]
     title_zh = config["study"]["title_zh"]
@@ -72,6 +73,10 @@ def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
     lines.extend([
         "",
         "### Submission",
+    ])
+    if letter_path:
+        lines.append(f"□ Fill 【請填寫】 fields in cover letter → {os.path.basename(letter_path)}")
+    lines.extend([
         "□ Email electronic copies to irb@kfsyscc.org",
         "□ Submit paper copies (1 original + 1 copy) to IRB office",
         "",

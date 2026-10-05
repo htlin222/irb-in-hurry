@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.checklist import generate_checklist
 from scripts.config import ConfigError, load_config
+from scripts.cover_letter import generate_cover_letter
 from scripts.docx_utils import apply_official_page_setup
 from scripts.form_selector import PHASE_FORMS, PHASE_NAMES, get_generator, select_forms
 
@@ -84,7 +85,11 @@ def main(config_path="config.toml", output_dir="output", phase=None, verbose=Fal
         print(f"  ■ {fid} {name_zh} → {os.path.basename(path)}")
         results.append((fid, name_zh, path, "generated"))
 
-    generate_checklist(config, results, phase_zh, checklist_path)
+    # Draft cover letter to the IRB committee
+    letter_path = generate_cover_letter(config, results, output_dir)
+    print(f"\n■ Cover letter draft → {letter_path}")
+
+    generate_checklist(config, results, phase_zh, checklist_path, letter_path=letter_path)
 
     print(f"\n■ Checklist written to {checklist_path}")
 

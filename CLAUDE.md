@@ -37,6 +37,7 @@ make set-phase PHASE=closure      # Persist the phase in config.toml (keeps comm
 - `scripts/generate_all.py` — Main orchestrator (`--phase`, `--output`, `--verbose`)
 - `scripts/set_phase.py` — Persist `phase = "..."` in config.toml without losing comments (`make set-phase`)
 - `scripts/checklist.py` — ■/□ checklist generator
+- `scripts/cover_letter.py` — 致委員會函稿 (polite cover letter draft per phase) → `output/IRB_致委員會函稿_<階段>.md`
 - `scripts/convert.py` — DOCX→PDF→PNG pipeline
 - `scripts/fetch_templates.py` — Download official blank forms → `templates/official/`
 - `scripts/validate_layout.py` — Layout/font safety gate → `output/layout_report.md`
