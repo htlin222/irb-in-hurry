@@ -1,8 +1,8 @@
 """Institution-agnostic pipeline: profile, fill-the-blank engine, onboarding."""
 import os
 import sys
+import tomllib
 
-import yaml
 from docx import Document
 from docx.shared import Twips
 
@@ -82,7 +82,7 @@ def test_onboard_drafts_profile_forms_and_inventory(tmp_path):
 
     assert onboard.main("demo", root=str(tmp_path)) == 0
     out = tmp_path / "institutions" / "demo"
-    prof = yaml.safe_load((out / "profile.yml").read_text(encoding="utf-8"))
+    prof = tomllib.loads((out / "profile.toml").read_text(encoding="utf-8"))
     assert prof["forms_module"] == "institutions.demo.forms"
     assert prof["name"] == "示範醫院" and prof["committee"] == "研究倫理委員會"
     assert prof["templates"]["files"] == {"F001": "IRB-F1 新案申請書.docx", "F002": "IRB-F2 檢核表.docx"}

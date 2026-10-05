@@ -1,13 +1,14 @@
 ---
 name: irb-form-generator
-description: Institution-agnostic IRB / ethics-committee paperwork pipeline — turns one config.yml into an institution's official DOCX forms (filled or rebuilt), PDFs, a ■/□ checklist and a Win/Mac layout gate, for every submission phase (new case, amendment, continuing review, closure, SAE, etc.). Ships the KFSYSCC form pack; onboards any other institution from its blank Word forms. Use when user mentions IRB, REC, ethics review, human subjects research, filling official DOCX forms, KFSYSCC, or wants to adapt the pipeline to their own hospital's forms.
+description: Institution-agnostic IRB / ethics-committee paperwork pipeline — turns one config.toml (+ cv.toml / 中文計畫摘要.md) into an institution's official DOCX forms (filled or rebuilt), PDFs, a ■/□ checklist and a Win/Mac layout gate, for every submission phase (new case, amendment, continuing review, closure, SAE, etc.). Ships the KFSYSCC form pack; onboards any other institution from its blank Word forms. Use when user mentions IRB, REC, ethics review, human subjects research, filling official DOCX forms, KFSYSCC, or wants to adapt the pipeline to their own hospital's forms.
 ---
 
 # IRB-in-Hurry Skill
 
-Institution-agnostic IRB form pipeline: `config.yml` (study facts) + an
-**institution profile** (`institutions/<id>/`) → official DOCX forms → PDF/PNG →
-layout gate. KFSYSCC (`institutions/kfsyscc/`, 43 forms) is the reference pack.
+Institution-agnostic IRB form pipeline: plain-text study sources (`config.toml` +
+referenced `cv.toml` / `中文計畫摘要.md`) + an **institution profile**
+(`institutions/<id>/`) → official DOCX forms → PDF/PNG → layout gate. KFSYSCC
+(`institutions/kfsyscc/`, 43 forms) is the reference pack.
 
 ## Step 0: Which institution?
 
@@ -15,20 +16,20 @@ Before anything else, settle which committee the user is submitting to:
 
 | Situation | Action |
 |---|---|
-| `institution:` in `config.yml` matches the user's committee | proceed |
-| Committee has a folder in `institutions/` | set `institution: <id>` in `config.yml` |
+| `institution` in `config.toml` matches the user's committee | proceed |
+| Committee has a folder in `institutions/` | set `institution = "<id>"` in `config.toml` |
 | New committee, user has blank forms or a forms URL | follow [onboard-institution.md](references/onboard-institution.md), then return here |
 | Unknown | ask: "Which hospital or committee are you submitting to?" |
 
 Everything institution-specific (committee name, IRB-number label, submission
 email, paper size, margins, font, form list, routing) comes from
-`institutions/<id>/profile.yml` + `forms.py`. **Never hardcode these in scripts
+`institutions/<id>/profile.toml` + `forms.py`. **Never hardcode these in scripts
 or generators**: read `institution()` (from `scripts.docx_utils`).
 Method and invariants: `docs/METHODOLOGY.md`.
 
 ## Quick Start
 
-Users do NOT need to manually edit YAML. Just provide any free-form text:
+Users do NOT need to edit config files by hand. Just provide any free-form text:
 
 ```
 User: "我想做一個回溯性研究，看2018-2023年肺癌免疫治療的甲狀腺功能，大約200人。我是腫瘤內科陳雅文。"
@@ -36,7 +37,7 @@ User: "我想做一個回溯性研究，看2018-2023年肺癌免疫治療的甲�
 
 Claude will:
 1. Save raw text to `raw/`
-2. Distill into `config.yml` (see [distill.md](references/distill.md))
+2. Distill into `config.toml` + `cv.toml` + `中文計畫摘要.md` (see [distill.md](references/distill.md)); run `make check`
 3. Ask for any missing required fields (IRB number, dates)
 4. Run `make all` + `make review`
 5. Show dashboard and review opinions
@@ -44,9 +45,10 @@ Claude will:
 ### Manual alternative
 
 ```bash
-# If user prefers to edit YAML directly:
-vim config.yml
-make all
+# If user prefers to edit the sources directly:
+make init EXAMPLE=tdxd-her2low   # optional starting point
+vim config.toml cv.toml 中文計畫摘要.md
+make check && make all
 make review
 ```
 
@@ -55,7 +57,7 @@ make review
 When a user provides a study topic, proposal, or any text:
 
 1. **Save raw input** -- Write to `raw/proposal_YYYYMMDD.md`
-2. **Distill to config** -- Extract study type, PI, dates, subjects → `config.yml` (see [distill.md](references/distill.md))
+2. **Distill to config** -- Study type, dates, subjects → `config.toml`; PI/co-PI → `cv.toml`; background/objectives/methods prose → `中文計畫摘要.md` (see [distill.md](references/distill.md)). `make check` must pass
 3. **Confirm with user** -- Ask about any missing required fields (IRB number, exact dates)
 4. **Generate forms** -- `make all` → DOCX + PDF + PNG previews + dashboard
 5. **Run reviewer** -- `make review` → `reviewers/review_*.md`
@@ -101,33 +103,35 @@ The form selector (`scripts/form_selector.py`) reads the active institution's `f
 
 ## Config Schema (Key Fields)
 
-```yaml
-institution: kfsyscc   # institutions/<id>/profile.yml
+```toml
+# config.toml — "@file" / "@file#key" values are replaced by that file's content
+institution = "kfsyscc"        # institutions/<id>/profile.toml
+phase    = "new"               # new | amendment | continuing | closure | sae | ...
+pi       = "@cv.toml#pi"       # [pi] name, name_en, dept, phone, email
+co_pi    = "@cv.toml#co_pi"    # [[co_pi]] entries (optional)
+proposal = "@中文計畫摘要.md"   # ## 研究背景 / 研究目的 / 納入條件 / 統計分析 ...
 
-study:
-  irb_no: ""           # IRB case number
-  title_zh: ""         # Chinese title
-  title_en: ""         # English title
-  type: ""             # retrospective | prospective | clinical_trial | genetic
-  review_type: ""      # exempt | expedited | full_board
-  drug_device: false   # Drug or device trial
-  genetic: false       # Involves genetic data
-  multicenter: false   # Multi-center study
+[study]
+irb_no      = ""               # IRB case number (blank until assigned)
+title_zh    = ""
+title_en    = ""
+type        = "retrospective"  # retrospective | prospective | clinical_trial | genetic
+review_type = "expedited"      # exempt | expedited | full_board
+drug_device = false
+genetic     = false
+multicenter = false
 
-pi:
-  name: ""             # PI Chinese name
-  dept: ""             # Department/title
+[dates]
+study_start = ""
+study_end   = ""
 
-dates:
-  study_start: ""      # Study start date
-  study_end: ""        # Study end date
-
-subjects:
-  planned_n: 0         # Planned enrollment
-  consent_waiver: false # Waiver of informed consent
-
-phase: ""              # new | amendment | continuing | closure | sae | ...
+[subjects]
+planned_n      = 0
+consent_waiver = false
 ```
+
+Phase switches never re-dump the file: `make closure` == `make all PHASE=closure` (one-off);
+`make set-phase PHASE=closure` persists it by editing only the `phase =` line.
 
 See [config-schema.md](references/config-schema.md) for the complete field reference.
 
@@ -141,21 +145,24 @@ All forms use this convention via `docx_utils.check()`.
 ## Project Structure
 
 ```
-config.yml                     # Study metadata (single source of truth) + `institution:`
+config.toml                    # Study metadata (single source of truth) + `institution`
+cv.toml                        # Study team (@cv.toml#pi, @cv.toml#co_pi)
+中文計畫摘要.md                 # Proposal prose (@中文計畫摘要.md)
+examples/                      # Complete example studies (make init EXAMPLE=...)
 institutions/<id>/
-  profile.yml                  # names, labels, submission, page, font, blanks
+  profile.toml                 # names, labels, submission, page, font, blanks
   forms.py                     # FORM_REGISTRY + PHASE_FORMS (form pack)
   form_inventory.md            # (onboarded packs) what each blank contains
 templates/<id>/                # official blank forms (gitignored ground truth)
 scripts/
   institution.py              # active profile loader
-  config.py                   # Load + validate config.yml (raises ConfigError listing every problem)
+  config.py                   # config.toml loader: @references, Markdown, validation (ConfigError lists every problem)
   template_fill.py            # generic fill-the-blank generator
   onboard.py                  # blanks → draft profile/forms/inventory
   docx_utils.py               # Shared DOCX helpers (init_doc, add_p, add_ct, etc.)
   form_selector.py            # Phase + study type -> required forms
   generate_all.py             # Main orchestrator (--phase, --output, --verbose)
-  set_phase.py                # Switch phase in config.yml, keeping comments
+  set_phase.py                # Persist phase in config.toml, keeping comments
   checklist.py                # Generates checklist.md with status
   convert.py                  # DOCX -> PDF -> PNG pipeline
   generators/                 # KFSYSCC rebuild generators (reference pack)
@@ -186,7 +193,7 @@ dashboard.sh                   # Terminal status dashboard
 - [SAE & Non-compliance (嚴重不良反應)](references/sae.md) -- SF079, SF044, SF074, SF080, SF024
 - [Other Categories](references/other-categories.md) -- IB update, import, suspension, appeal
 - [Study Types & Routing](references/study-types.md) -- Classification logic
-- [Config Schema](references/config-schema.md) -- All config.yml fields
+- [Config Schema](references/config-schema.md) -- All config.toml fields and `@` references
 - [Onboard an Institution](references/onboard-institution.md) -- New committee from its blank DOCX forms
 - [Brainstorm](references/brainstorm.md) -- Research topic ideas (KFSYSCC + Taiwan epidemiology example)
 - [Distill: Raw Text → Config](references/distill.md) -- How to extract config from free-form text

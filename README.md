@@ -5,13 +5,13 @@
 -->
 
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — institution-agnostic IRB form generator: one YAML file, one command, every official form" width="100%">
+  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — institution-agnostic IRB form generator: plain-text sources, one command, every official form" width="100%">
 </p>
 
 <h1 align="center">IRB-in-Hurry: Institution-Agnostic IRB Form Generator</h1>
 
 <p align="center">
-  <strong>Turn one YAML file into a complete, submission-ready IRB packet — DOCX + PDF, in seconds.</strong>
+  <strong>Turn a few plain-text files into a complete, submission-ready IRB packet — DOCX + PDF, in seconds.</strong>
 </p>
 
 <p align="center">
@@ -37,7 +37,7 @@
 
 You have a brilliant retrospective study. You also have **five Word forms**, each wanting the same IRB number, the same bilingual title, the same PI phone extension, and a very particular opinion about whether a checkbox is ■ or □. You've typed your own name in 標楷體 eleven times tonight. The twelfth time, you misspelled it.
 
-**IRB-in-Hurry** is the colleague who stays late so you don't have to. Describe your study once in `config.yml`, run `make all`, and it:
+**IRB-in-Hurry** is the colleague who stays late so you don't have to. Describe your study once in plain text — `config.toml` for the facts, `cv.toml` for the team, `中文計畫摘要.md` for the prose — run `make all`, and it:
 
 1. 🧭 **Figures out which forms you need**, based on study type and submission phase
 2. 📝 **Fills every one of them in**: headers, titles, checkboxes, dates, and the rest
@@ -76,6 +76,7 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 - **Fill-the-blank engine**: writes values next to the labels of the *official* blank and flips □→■, so layout matches the original exactly
 - **11 IRB categories** supported in the KFSYSCC reference pack: new case, amendment, continuing review, closure, SAE, IB update, import, suspension, appeal, re-review, and other
 - **43 form generators** with automatic selection based on study type and submission phase
+- **Plain-text single source of truth**: `config.toml` + referenced `cv.toml` / Markdown, diffable and reusable across studies
 - **Smart routing**: retrospective study automatically selects expedited review + consent waiver forms
 - **DOCX generation** using python-docx with proper formatting (standard KaiTi font, ■/□ checkboxes)
 - **PDF + PNG preview** pipeline for visual validation
@@ -87,17 +88,17 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 
 ```bash
 mkdir -p templates/myhosp && cp ~/Downloads/irb-forms/*.docx templates/myhosp/
-make onboard INST=myhosp        # → institutions/myhosp/{profile.yml, forms.py, form_inventory.md}
+make onboard INST=myhosp        # → institutions/myhosp/{profile.toml, forms.py, form_inventory.md}
 # finish the TODOs (names, email, label→field map, phase routing)
-echo "institution: myhosp" >> config.yml
+# config.toml: institution = "myhosp"  (top-level, before the first [table])
 make templates && make all      # generate → PDF → layout gate (0 errors) → dashboard
 ```
 
 | You provide | The pipeline gives you |
 |---|---|
 | Your committee's blank `.docx`/`.doc` forms | Paper size, margins, fonts, labels and checkboxes per form, inventoried |
-| Names, submission address, phase routing | A `profile.yml` + `forms.py` form pack |
-| One `config.yml` per study | Filled forms, PDFs, ■/□ checklist, Win/Mac layout gate |
+| Names, submission address, phase routing | A `profile.toml` + `forms.py` form pack |
+| One `config.toml` per study | Filled forms, PDFs, ■/□ checklist, Win/Mac layout gate |
 
 - **Step-by-step fork guide:** [docs/ONBOARDING.md](docs/ONBOARDING.md)
 - **The method and its DOCX invariants:** [docs/METHODOLOGY.md](docs/METHODOLOGY.md)
@@ -132,11 +133,10 @@ git clone https://github.com/htlin222/irb-in-hurry.git
 cd irb-in-hurry
 make setup
 
-# 2. Edit config.yml with your study details
-#    (or copy the example fixture)
-cp tests/fixtures/sample_retrospective.yml config.yml
-#    Full example with a filled 中文計畫摘要 (T-DXd vs chemo, HER2-low, PSM):
-#    cp tests/fixtures/example_tdxd_her2low.yml config.yml
+# 2. Start from an example (or edit config.toml / cv.toml / 中文計畫摘要.md directly)
+make init EXAMPLE=tdxd-her2low      # T-DXd vs chemo, HER2-low, PSM — filled 中文計畫摘要
+#   make init EXAMPLE=gcsf-retrospective FORCE=1   # also exercises closure
+make check                          # resolve @references, validate required fields
 
 # 3. Generate everything
 make all
@@ -149,6 +149,8 @@ make all
 | Command | Description |
 |---------|-------------|
 | `make all` | Generate DOCX + PDF + layout check + dashboard |
+| `make check` | Resolve `@references` in `config.toml` and validate required fields |
+| `make init EXAMPLE=…` | Copy an example study from `examples/` to the root |
 | `make templates` | Cache the institution's official blank forms (once) |
 | `make onboard INST=<id>` | Draft a new institution from its blanks in `templates/<id>/` |
 | `make validate` | Layout/font safety gate (paper, margins, form font, Win/Mac, vs official blank) |
@@ -160,15 +162,17 @@ make all
 | `make test` | Run pytest |
 | `make lint` | Lint with ruff (`make format` auto-fixes) |
 | `make clean` | Remove generated files |
-| `make new` | Switch to new case phase (edits `phase:` only, comments kept) + generate |
-| `make closure` | Switch to closure phase + generate |
-| `make amendment` | Switch to amendment phase + generate |
-| `make continuing` | Switch to continuing review + generate |
+| `make closure` | `make all PHASE=closure` — any phase works (`new`, `amendment`, `continuing`, `sae`, …); `config.toml` is never rewritten |
+| `make review` | Simulated IRB reviewer on the generated forms |
+| `make set-phase PHASE=closure` | Persist the phase in `config.toml` (edits only the `phase =` line, comments kept) |
 
 ### Workflow
 
 ```
-config.yml ─┐
+config.toml ─┬─ @cv.toml
+             └─ @中文計畫摘要.md
+     ↓
+config.py ─┐
 institutions/<id>/ (profile + forms) ─┴→ generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
@@ -177,7 +181,8 @@ output/*.docx + templates/<id>/ (官方空白表單) → validate_layout.py
                                                  → output/preview/compare/*.png
 ```
 
-1. **Edit `config.yml`** — Fill in study metadata (IRB number, titles, PI info, dates, study type)
+1. **Edit the plain-text sources** — `config.toml` (IRB number, titles, dates, study type),
+   `cv.toml` (PI / co-PI), `中文計畫摘要.md` (background, objectives, methods…); `make check`
 2. **`make all`** — Generates DOCX forms, converts to PDF, shows dashboard
 3. **Layout gate** — `make validate` must report 0 errors; open `output/layout_report.md`
    and `output/preview/compare/*.png` (official blank left, generated right)
@@ -185,29 +190,51 @@ output/*.docx + templates/<id>/ (官方空白表單) → validate_layout.py
    send the DOCX only if the IRB asks to edit it
 5. **Complete manual steps** — Sign forms, attach protocol, send to the address in the profile (KFSYSCC: irb@kfsyscc.org)
 
-### Config Schema
+### Single Source of Truth
 
-```yaml
-institution: kfsyscc         # institutions/<id>/profile.yml
+Everything the forms need lives in plain text. `config.toml` holds the structured facts;
+any value written as `"@file"` or `"@file#key"` is replaced by that file's content, so prose
+and people stay in the formats that suit them:
 
-study:
-  irb_no: "20250801A"
-  title_zh: "研究中文標題"
-  title_en: "English Title"
-  type: retrospective        # retrospective|prospective|clinical_trial
-  review_type: expedited     # exempt|expedited|full_board
+```toml
+# config.toml
+institution = "kfsyscc"         # institutions/<id>/profile.toml
+phase    = "new"                 # new | amendment | continuing | closure | sae | …
+pi       = "@cv.toml#pi"
+co_pi    = "@cv.toml#co_pi"
+proposal = "@中文計畫摘要.md"
 
-pi:
-  name: "林協霆"
-  dept: "腫瘤內科部／醫師"
-  email: "htlin222@kfsyscc.org"
+[study]
+irb_no      = ""                 # blank until assigned
+title_zh    = "研究中文標題"
+title_en    = "English Title"
+type        = "retrospective"    # retrospective | prospective | clinical_trial | genetic
+review_type = "expedited"        # exempt | expedited | full_board
 
-subjects:
-  planned_n: 300
-  consent_waiver: true       # auto-set for retrospective
-
-phase: new                   # new|amendment|continuing|closure|sae|...
+[subjects]
+planned_n      = 300
+consent_waiver = true
 ```
+
+```toml
+# cv.toml — reuse across studies
+[pi]
+name  = "林協霆"
+dept  = "腫瘤內科部／醫師"
+email = "htlin222@kfsyscc.org"
+```
+
+```markdown
+<!-- 中文計畫摘要.md — each ## heading fills one section of the official form -->
+## 研究背景
+荷爾蒙受體陽性乳癌……（wrapped lines are joined; no stray spaces between CJK）
+
+## 納入條件
+- 年滿20歲……
+- 轉移後曾接受CDK4/6抑制劑……
+```
+
+Long free text elsewhere works the same way, e.g. `change_description = "@修正說明.md"`.
 
 See [config-schema reference](.claude/skills/irb/references/config-schema.md) for all fields.
 
@@ -226,13 +253,12 @@ See [config-schema reference](.claude/skills/irb/references/config-schema.md) fo
 make test
 ```
 
-Tests cover form selection, DOCX content, checklist generation, end-to-end generation for new case and closure, the layout safety gate, the institution profile, the fill-the-blank engine, and onboarding from synthetic blanks.
+Tests cover the config loader and `@references`, form selection, DOCX content, checklist generation, end-to-end generation for new case and closure, the layout safety gate, the institution profile, the fill-the-blank engine, and onboarding from synthetic blanks.
 
 ## Dependencies
 
-- Python 3.10+
+- Python 3.11+ (TOML via the standard library's `tomllib`)
 - [python-docx](https://python-docx.readthedocs.io/) — DOCX generation
-- [PyYAML](https://pyyaml.org/) — Config parsing
 - [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF conversion (`brew install --cask libreoffice`; Windows: `winget install TheDocumentFoundation.LibreOffice`; Linux: `apt install libreoffice-writer fonts-arphic-ukai`)
 - [poppler](https://poppler.freedesktop.org/) — PDF→PNG preview (`brew install poppler`)
 
@@ -241,7 +267,7 @@ Tests cover form selection, DOCX content, checklist generation, end-to-end gener
 This project includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that enables AI-assisted IRB form preparation. When using Claude Code in this repo, it can:
 
 - Classify your study type from a proposal description
-- Auto-fill `config.yml` based on your study details
+- Draft `config.toml`, `cv.toml` and `中文計畫摘要.md` from your study details
 - Generate and validate all required forms
 - Guide you through manual steps
 
@@ -249,22 +275,25 @@ This project includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that en
 
 ```
 irb-in-hurry/
-├── config.yml                 # Study metadata (single source of truth) + institution:
+├── config.toml                # Study metadata (single source of truth) + institution
+├── cv.toml                    # Study team, referenced as @cv.toml#pi
+├── 中文計畫摘要.md             # Proposal prose, referenced as @中文計畫摘要.md
+├── examples/                  # Complete example studies (make init EXAMPLE=…)
 ├── Makefile                   # Easy commands
 ├── dashboard.sh               # Status overview
 ├── institutions/
-│   └── kfsyscc/               # Reference pack: profile.yml + forms.py (registry + routing)
+│   └── kfsyscc/               # Reference pack: profile.toml + forms.py (registry + routing)
 ├── templates/<id>/            # Official blank forms (gitignored)
 ├── docs/                      # METHODOLOGY.md, ONBOARDING.md
 ├── scripts/
 │   ├── institution.py         # Active institution profile
-│   ├── config.py              # Load + validate config.yml (clear errors, defaults)
+│   ├── config.py              # config.toml loader: @references, validation (clear errors, defaults), make check
 │   ├── template_fill.py       # Generic fill-the-blank generator
 │   ├── onboard.py             # Blanks → draft profile / forms / inventory
 │   ├── docx_utils.py          # Shared DOCX helpers
 │   ├── form_selector.py       # Phase routing over the active form pack
 │   ├── generate_all.py        # Main orchestrator (--phase, --output, --verbose)
-│   ├── set_phase.py           # Switch phase in config.yml, keeping comments
+│   ├── set_phase.py           # Persist phase in config.toml, keeping comments
 │   ├── checklist.py           # ■/□ checklist generator
 │   ├── convert.py             # DOCX→PDF→PNG pipeline
 │   ├── fetch_templates.py     # Scrape or index official blank forms
@@ -290,7 +319,7 @@ irb-in-hurry/
 ## FAQ
 
 **What is IRB-in-Hurry?**
-An open-source Python tool that fills in an institution's Institutional Review Board (IRB) submission forms automatically from a single YAML config, producing Word (DOCX) and PDF files ready to sign. It ships with the full KFSYSCC form pack and onboards other institutions from their blank Word forms.
+An open-source Python tool that fills in an institution's Institutional Review Board (IRB) submission forms automatically from plain-text sources (a TOML config plus Markdown), producing Word (DOCX) and PDF files ready to sign. It ships with the full KFSYSCC form pack and onboards other institutions from their blank Word forms.
 
 **Does it replace IRB review or ethical judgment?**
 No. It never submits, approves, or skips anything. It fills in the paperwork the IRB requires. Study design, risk assessment, and participant protection stay with you and the committee.
@@ -302,10 +331,10 @@ For KFSYSCC, all 11 categories: new case (新案), re-review (複審), amendment
 Yes. Submit the generated PDF, which has fonts embedded. `make validate` checks paper size, official margins, and the institution's form font (KFSYSCC: 標楷體 / DFKai-SB) against the official blank templates, and it has to report 0 errors before you submit.
 
 **Can I use it for another hospital's IRB?**
-Yes, and that is what the design is for. Put your committee's blank forms in `templates/<id>/` and run `make onboard INST=<id>`. Then finish the drafted `institutions/<id>/profile.yml` and `forms.py`. Most forms need only a `label → config field` map, because the engine fills the official blank itself. See [docs/ONBOARDING.md](docs/ONBOARDING.md).
+Yes, and that is what the design is for. Put your committee's blank forms in `templates/<id>/` and run `make onboard INST=<id>`. Then finish the drafted `institutions/<id>/profile.toml` and `forms.py`. Most forms need only a `label → config field` map, because the engine fills the official blank itself. See [docs/ONBOARDING.md](docs/ONBOARDING.md).
 
 **Does it work with AI assistants?**
-Yes. It includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that can classify your study from a proposal, draft `config.yml`, and walk you through the remaining manual steps.
+Yes. It includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that can classify your study from a proposal, draft `config.toml` and `中文計畫摘要.md`, and walk you through the remaining manual steps.
 
 ## References
 

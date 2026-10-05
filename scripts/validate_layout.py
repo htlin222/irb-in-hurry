@@ -15,7 +15,7 @@ For every DOCX in output/ it checks:
 
 Errors exit non-zero so `make all` stops before anything unsafe is sent.
 Paper, margins, font and the blank forms all come from the active institution
-profile (institutions/<id>/profile.yml); blanks are cached by `make templates`.
+profile (institutions/<id>/profile.toml); blanks are cached by `make templates`.
 
 Usage: uv run python scripts/validate_layout.py [output_dir] [--no-render] [--strict]
 """

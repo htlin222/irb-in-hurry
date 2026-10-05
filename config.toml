@@ -1,0 +1,66 @@
+# IRB-in-Hurry — single source of truth for one study.
+#
+#   make check        resolve @references and validate required fields
+#   make all          DOCX → PDF → layout gate → dashboard
+#   make closure      same, with phase overridden (config.toml is never rewritten)
+#
+# A value "@file" or "@file#key" pulls content from another plain-text file
+# (path relative to this one). Edit prose in Markdown, people in cv.toml.
+# Field reference: .claude/skills/irb/references/config-schema.md
+
+institution = "kfsyscc"   # institutions/<id>/profile.toml
+phase = "new"   # new | amendment | re_review | continuing | closure | sae | ib_update | import | suspension | appeal
+
+pi       = "@cv.toml#pi"
+co_pi    = "@cv.toml#co_pi"
+proposal = "@中文計畫摘要.md"
+
+[study]
+irb_no       = ""          # blank until the IRB assigns one
+project_no   = "不適用"
+title_zh     = "晚期非小細胞肺癌患者接受表皮生長因子受體酪氨酸激酶抑制劑治療之皮膚毒性與治療反應相關性分析：單中心回溯性研究"
+title_en     = "Association Between Skin Toxicity and Treatment Response in Advanced Non-Small Cell Lung Cancer Patients Treated with EGFR-TKI: A Single-Center Retrospective Study"
+type         = "retrospective"   # retrospective | prospective | clinical_trial | genetic
+design       = "cohort"          # cohort | case_control | cross_sectional | rct | single_arm
+review_type  = "expedited"       # exempt | expedited | full_board
+drug_device  = false
+genetic      = false
+multicenter  = false
+
+[dates]
+study_start       = "2026年04月01日"
+study_end         = "2027年03月31日"
+data_period       = "2019年01月01日 至 2024年12月31日"
+irb_approval_date = ""
+
+[subjects]
+planned_n             = 150
+actual_n              = 0
+consent_waiver        = true
+vulnerable_population = false
+groups = [
+  { name = "皮膚毒性組", n = 0 },
+  { name = "無皮膚毒性組", n = 0 },
+]
+
+[closure]
+extensions = 0
+amendments = 0
+sae_count  = 0
+specimens  = false
+
+[closure.data_safety]
+deidentified         = true
+encrypted            = true
+retention_years      = 7
+authorized_personnel = "王大明（計畫主持人）"
+
+[amendment]
+change_description = ""   # or "@修正說明.md"
+affects_consent    = false
+affects_risk       = false
+
+[continuing_review]
+enrollment_status   = ""
+deviations          = 0
+extension_requested = false

@@ -1,0 +1,62 @@
+# Example: T-DXd vs physician's-choice chemotherapy in HR+/HER2-low MBC
+# Retrospective single-center PSM cohort — new case submission.
+# PI details from https://lin.hsiehting.com/cv/#zh ; clinical content is illustrative.
+#
+#   make init EXAMPLE=tdxd-her2low && make all
+
+institution = "kfsyscc"   # institutions/<id>/profile.toml
+phase = "new"
+
+pi       = "@cv.toml#pi"
+proposal = "@中文計畫摘要.md"
+
+[study]
+irb_no      = ""
+project_no  = "不適用"
+title_zh    = "荷爾蒙受體陽性、HER2低表現轉移性乳癌患者於CDK4/6抑制劑及二線荷爾蒙治療失敗後接受Trastuzumab Deruxtecan與醫師選擇化學治療之臨床預後比較：單中心傾向分數配對回溯性世代研究"
+title_en    = "Trastuzumab Deruxtecan versus Physician's Choice Chemotherapy after CDK4/6 Inhibitor and Second-line Endocrine Therapy in HR-positive, HER2-low Metastatic Breast Cancer: A Single-Center Propensity Score-Matched Retrospective Cohort Study"
+type        = "retrospective"
+design      = "cohort"
+review_type = "expedited"
+drug_device = false
+genetic     = false
+multicenter = false
+
+[dates]
+study_start       = "2026年11月01日"
+study_end         = "2027年10月31日"
+data_period       = "2020年01月01日 至 2026年06月30日"
+irb_approval_date = ""
+
+[subjects]
+planned_n             = 220
+actual_n              = 0
+consent_waiver        = true
+vulnerable_population = false
+groups = [
+  { name = "T-DXd組（trastuzumab deruxtecan 5.4 mg/kg 每3週）", n = 70 },
+  { name = "醫師選擇化療組（capecitabine、eribulin、gemcitabine、paclitaxel 或 nab-paclitaxel）", n = 150 },
+  { name = "傾向分數1:1配對後每組（預估）", n = 60 },
+]
+
+[closure]
+extensions = 0
+amendments = 0
+sae_count  = 0
+specimens  = false
+
+[closure.data_safety]
+deidentified         = true
+encrypted            = true
+retention_years      = 7
+authorized_personnel = "林協霆（計畫主持人）"
+
+[amendment]
+change_description = ""
+affects_consent    = false
+affects_risk       = false
+
+[continuing_review]
+enrollment_status   = ""
+deviations          = 0
+extension_requested = false

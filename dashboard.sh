@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # IRB Submission Dashboard
-# Usage: ./dashboard.sh [config.yml] [output_dir]
+# Usage: ./dashboard.sh [config.toml] [output_dir]   (honours $PHASE)
 
 set -euo pipefail
 
-CONFIG="${1:-config.yml}"
+CONFIG="${1:-config.toml}"
 OUTPUT_DIR="${2:-output}"
 CHECKLIST="checklist.md"
 
@@ -34,35 +34,16 @@ if [ ! -f "$CONFIG" ]; then
     exit 1
 fi
 
-# Read study fields through the same validated loader the generators use.
-# Values are shell-quoted, so titles containing quotes or $ are safe to eval.
-FIELDS="$($PY - "$CONFIG" <<'PY'
-import shlex, sys
-from scripts.config import load_config
-from scripts.form_selector import PHASE_NAMES
-from scripts.institution import resolve_id
-c = load_config(sys.argv[1])
-fields = {
-    "INSTITUTION": resolve_id(c).upper(),
-    "IRB_NO": c["study"]["irb_no"] or "（尚未取得）",
-    "PHASE": c["phase"],
-    "PHASE_ZH": PHASE_NAMES.get(c["phase"], c["phase"]),
-    "TITLE": c["study"]["title_zh"][:40],
-    "PI": c["pi"]["name"],
-    "STUDY_TYPE": c["study"].get("type", ""),
-    "REVIEW_TYPE": c["study"].get("review_type", ""),
-}
-for k, v in fields.items():
-    print(f"{k}={shlex.quote(str(v))}")
-PY
-)" || { echo "⚠ Could not parse $CONFIG"; exit 1; }
+# Resolve config.toml (+ @references) through the same validated loader the
+# generators use. Values are shell-quoted, so titles with quotes or $ are safe.
+FIELDS="$($PY "$ROOT/scripts/config.py" "$CONFIG" --shell)" || { echo "⚠ Could not load $CONFIG"; exit 1; }
 eval "$FIELDS"
 
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════╗${NC}"
 echo -e "${BOLD}║     ${CYAN}${INSTITUTION} IRB Submission Dashboard${NC}"
 echo -e "${BOLD}╠══════════════════════════════════════════════╣${NC}"
-echo -e "${BOLD}║${NC} IRB No:     ${GREEN}${IRB_NO}${NC}"
+echo -e "${BOLD}║${NC} IRB No:     ${GREEN}${IRB_NO:-（待核發）}${NC}"
 echo -e "${BOLD}║${NC} Phase:      ${CYAN}${PHASE_ZH}${NC} (${PHASE})"
 echo -e "${BOLD}║${NC} PI:         ${PI}"
 echo -e "${BOLD}║${NC} Study Type: ${STUDY_TYPE} / ${REVIEW_TYPE}"

@@ -21,7 +21,7 @@ requirements.txt
 
 # Config with real data (template is tracked)
 # Uncomment if you don't want to track your filled config:
-# config.yml
+# config.toml cv.toml 中文計畫摘要.md
 
 # Claude Code local settings
 .claude/settings.local.json

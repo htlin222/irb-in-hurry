@@ -1,0 +1,14 @@
+# Study team. Referenced from config.toml as "@cv.toml#pi" / "@cv.toml#co_pi".
+# Fill once, reuse across studies.
+
+[pi]
+name    = "王大明"
+name_en = "Ta-Ming Wang"
+dept    = "胸腔內科部／醫師"       # 單位／職稱
+phone   = "院內分機1680"
+email   = "tmwang@kfsyscc.org"
+
+[[co_pi]]
+name    = "李小華"
+name_en = "Xiao-Hua Li"
+dept    = "皮膚科／醫師"

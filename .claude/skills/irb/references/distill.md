@@ -1,19 +1,28 @@
-# Distill: Raw Text → config.yml
+# Distill: Raw Text → config.toml
 
 ## Overview
 
-When a user provides free-form text (proposal, study idea, email, abstract, or even a casual description), Claude should **distill** it into a structured `config.yml` — no manual YAML editing needed.
+When a user provides free-form text (proposal, study idea, email, abstract, or even a casual description), Claude should **distill** it into the study's source files — no manual TOML editing needed:
+
+| File | Holds |
+|------|-------|
+| `config.toml` | Structured metadata: `phase`, `[study]`, `[dates]`, `[subjects]`, and `pi`/`co_pi`/`proposal` as `@` references |
+| `cv.toml` | People: `[pi]` and `[[co_pi]]` (name, name_en, dept, phone, email) |
+| `中文計畫摘要.md` | Proposal prose: one `## 標題` per section (研究背景、研究目的、研究設計、納入條件、排除條件、資料收集項目、研究終點、研究方法、統計分析、附件) |
+
+Put long prose in Markdown, never in TOML strings. A section made only of `-` / `1.` items becomes a list; anything else becomes paragraphs.
 
 ## Workflow
 
 1. **Save raw input** to `raw/` with a descriptive filename (e.g., `raw/proposal_20260330.md`)
-2. **Extract structured fields** from the text into `config.yml`
-3. **Ask user to confirm** any uncertain fields before generating forms
-4. **Proceed** with `make all` + `make review`
+2. **Extract structured fields** into `config.toml`, people into `cv.toml`, and proposal prose into `中文計畫摘要.md` (to start from a template instead, `make init EXAMPLE=tdxd-her2low` copies an example from `examples/`)
+3. **Run `make check`** to resolve `@` references and validate required fields
+4. **Ask user to confirm** any uncertain fields before generating forms
+5. **Proceed** with `make all` + `make review`
 
 ## Extraction Rules
 
-Read the user's text and map to config.yml fields. Use these heuristics:
+Read the user's text and map to config fields (dotted names below are TOML tables; `pi.*`/`co_pi` live in `cv.toml`). Use these heuristics:
 
 ### Study Identification
 | Look for | Maps to |
@@ -30,7 +39,7 @@ Read the user's text and map to config.yml fields. Use these heuristics:
 | 前瞻, prospective, observational, 觀察 | `prospective` | `expedited` or `full_board` |
 | 臨床試驗, clinical trial, RCT, randomized | `clinical_trial` | `full_board` |
 | 基因, genetic, genomic, NGS, sequencing | `genetic` | `full_board` |
-| 多中心, multicenter, multi-site | set `multicenter: true` | varies |
+| 多中心, multicenter, multi-site | set `multicenter = true` | varies |
 
 ### Study Design
 | Keywords | `study.design` |
@@ -42,10 +51,10 @@ Read the user's text and map to config.yml fields. Use these heuristics:
 | 單臂, single-arm | `single_arm` |
 
 ### Auto-set Rules
-- `retrospective` → `consent_waiver: true`, `review_type: expedited`
-- `clinical_trial` + drug keywords → `drug_device: true`
-- `genetic` keywords → `genetic: true`
-- If no phase mentioned → default `phase: new`
+- `retrospective` → `consent_waiver = true`, `review_type = "expedited"`
+- `clinical_trial` + drug keywords → `drug_device = true`
+- `genetic` keywords → `genetic = true`
+- If no phase mentioned → default `phase = "new"`
 
 ### PI Information
 | Look for | Maps to |
@@ -55,7 +64,7 @@ Read the user's text and map to config.yml fields. Use these heuristics:
 | 科, 部, department | `pi.dept` |
 | phone, 電話, 分機 | `pi.phone` |
 | email, @<hospital domain> | `pi.email` |
-| 共同主持人, co-PI, co-investigator | `co_pi[]` |
+| 共同主持人, co-PI, co-investigator | `[[co_pi]]` |
 
 ### Dates
 | Look for | Maps to |
@@ -69,8 +78,21 @@ Read the user's text and map to config.yml fields. Use these heuristics:
 | Look for | Maps to |
 |----------|---------|
 | 人數, sample size, N=, n=, 收案, enrollment | `subjects.planned_n` |
-| 組, group, arm | `subjects.groups[]` |
-| 脆弱, vulnerable, 兒童, children, 囚犯 | `subjects.vulnerable_population: true` |
+| 組, group, arm | `subjects.groups` |
+| 脆弱, vulnerable, 兒童, children, 囚犯 | `subjects.vulnerable_population = true` |
+
+### Proposal Prose (→ `中文計畫摘要.md`)
+| Look for | `## 標題` |
+|----------|-----------|
+| 背景, rationale, background | `## 研究背景` |
+| 目的, aim, objective, hypothesis | `## 研究目的` |
+| 設計, design, 分組方式 | `## 研究設計` |
+| 納入, inclusion | `## 納入條件` |
+| 排除, exclusion | `## 排除條件` |
+| 收集變項, variables, data items | `## 資料收集項目` |
+| 終點, endpoint, outcome | `## 研究終點` |
+| 方法, procedures (prospective / trial) | `## 研究方法` |
+| 統計, statistics, sample size calculation | `## 統計分析` |
 
 ### Phase (if not new case)
 | Keywords | `phase` |
@@ -81,6 +103,8 @@ Read the user's text and map to config.yml fields. Use these heuristics:
 | 不良反應, SAE, adverse event | `sae` |
 | Default (no keywords) | `new` |
 
+Keep `phase = "new"` as the default in `config.toml`; for a later phase, run `make <phase>` (e.g. `make closure` = `make all PHASE=closure`) instead of editing the file.
+
 ## What to Do When Information is Missing
 
 For **required fields** that can't be extracted:
@@ -90,7 +114,7 @@ For **required fields** that can't be extracted:
 
 For **optional fields** with sensible defaults:
 - `study.project_no` → "不適用"
-- `closure.data_safety.*` → `deidentified: true`, `encrypted: true`, `retention_years: 7`
+- `closure.data_safety.*` → `deidentified = true`, `encrypted = true`, `retention_years = 7`
 - `subjects.vulnerable_population` → `false`
 
 ## Example
@@ -98,31 +122,59 @@ For **optional fields** with sensible defaults:
 **User input:**
 > 我想做一個回溯性研究，看2018到2023年間在我們醫院接受免疫治療的肺癌病人，大約200人，看甲狀腺功能有沒有受影響。我是腫瘤內科的陳雅文醫師。
 
-**Distilled config.yml:**
-```yaml
-study:
-  irb_no: ""  # ask user
-  title_zh: ""  # generate from description
-  title_en: ""  # generate from description
-  type: retrospective
-  design: cohort
-  review_type: expedited
-  drug_device: false
-  genetic: false
-  multicenter: false
-pi:
-  name: "陳雅文"
-  dept: "腫瘤內科部／醫師"
-dates:
-  data_period: "2018年01月01日 至 2023年12月31日"
-subjects:
-  planned_n: 200
-  consent_waiver: true
-phase: new
+**Distilled `config.toml`:**
+```toml
+phase = "new"
+
+pi       = "@cv.toml#pi"
+co_pi    = "@cv.toml#co_pi"
+proposal = "@中文計畫摘要.md"
+
+[study]
+irb_no      = ""   # ask user
+title_zh    = ""   # generate from description
+title_en    = ""   # generate from description
+type        = "retrospective"
+design      = "cohort"
+review_type = "expedited"
+drug_device = false
+genetic     = false
+multicenter = false
+
+[dates]
+data_period = "2018年01月01日 至 2023年12月31日"
+
+[subjects]
+planned_n      = 200
+consent_waiver = true
+```
+
+**Distilled `cv.toml`:**
+```toml
+co_pi = []   # no co-PI mentioned; replace with [[co_pi]] tables when there are some
+
+[pi]
+name = "陳雅文"
+dept = "腫瘤內科部／醫師"
+```
+
+**Distilled `中文計畫摘要.md`:**
+```markdown
+## 研究目的
+
+- 主要目的：分析接受免疫治療之肺癌患者甲狀腺功能異常之發生率。
+
+## 納入條件
+
+- 2018年01月01日至2023年12月31日間於本院接受免疫治療之肺癌患者。
+
+## 資料收集項目
+
+年齡、性別、免疫治療藥物種類、甲狀腺功能檢驗值（TSH、Free T4）及發生時間。
 ```
 
 Then Claude should:
 1. Generate a proper Chinese + English title from the description
 2. Ask for IRB number and study period dates
 3. Fill remaining fields with defaults
-4. Write config.yml and run `make all`
+4. Write `config.toml`, `cv.toml`, `中文計畫摘要.md`, run `make check`, then `make all`

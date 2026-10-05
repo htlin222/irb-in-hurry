@@ -1,11 +1,10 @@
 [project]
 name = "irb-in-hurry"
-version = "1.0.0"
-description = "Institution-agnostic IRB form pipeline: YAML → official DOCX blanks → PDF, with a layout gate. Ships the KFSYSCC form pack (43 forms)."
-requires-python = ">=3.10"
+version = "1.1.0"
+description = "Institution-agnostic IRB form pipeline: TOML → official DOCX blanks → PDF, with a layout gate. Ships the KFSYSCC form pack (43 forms)."
+requires-python = ">=3.11"  # tomllib
 dependencies = [
     "python-docx",
-    "pyyaml",
     "pdf2image",
     "pillow",
 ]
@@ -22,7 +21,7 @@ pythonpath = ["."]
 
 [tool.ruff]
 line-length = 120
-target-version = "py310"
+target-version = "py311"
 extend-exclude = ["templates", "output"]
 
 [tool.ruff.lint]

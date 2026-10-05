@@ -1,7 +1,7 @@
 """Form selector: maps (study type + phase) → required IRB forms.
 
 Institution-agnostic: the form registry and phase routing come from the active
-institution's `forms_module` (see institutions/<id>/profile.yml).
+institution's `forms_module` (see institutions/<id>/profile.toml).
 """
 import importlib
 

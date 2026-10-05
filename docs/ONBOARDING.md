@@ -31,7 +31,7 @@ This writes three drafts to `institutions/myhosp/`:
 | File | What to do with it |
 |---|---|
 | `form_inventory.md` | Read it first. It lists each form's paper, margins and font, then every table label, `label：＿＿` line and □ option it found. |
-| `profile.yml` | Fix every `TODO`: hospital and committee name, submission email, font aliases, `lang`. |
+| `profile.toml` | Fix every `TODO`: hospital and committee name, submission email, font aliases, `lang`. |
 | `forms.py` | One `blank_generator(...)` per form. Recognised labels are pre-mapped (`計畫名稱 → {study.title_zh}`), and the rest are `# TODO` lines. |
 
 Re-running never overwrites your edits unless you pass `--force`
@@ -43,7 +43,7 @@ For each `# TODO` in `forms.py`:
 
 ```python
 generate_f002 = blank_generator("F002", fields={
-    "計畫名稱": "{study.title_zh}",                       # format string over config.yml
+    "計畫名稱": "{study.title_zh}",                       # format string over config.toml
     "執行期間": "{dates.study_start} 至 {dates.study_end}",
     "受試者人數": lambda c: f"{c['subjects']['planned_n']} 人",   # or any callable
     # "審查委員意見": "",                                 # leave committee-only fields out
@@ -60,7 +60,7 @@ Rules of thumb:
   `＿＿＿` run, or gets `：value` appended.
 - **The key must match the label as printed.** Spaces and colons are ignored. If
   the blank says `計畫主持人（簽名）`, use that full text as the key.
-- **Need a value that isn't in `config.yml` yet?** Add it under the matching
+- **Need a value that isn't in `config.toml` yet?** Add it under the matching
   section (`study`, `pi`, `subjects`, …) and document it in
   `.claude/skills/irb/references/config-schema.md`. Never hardcode it in `forms.py`.
 - **Checkbox keys are the option text right after the □.**
@@ -92,9 +92,9 @@ names freely for anything else.
 
 ## 5. Switch on and run
 
-```yaml
-# config.yml
-institution: myhosp
+```toml
+# config.toml (top-level, before the first [table])
+institution = "myhosp"
 ```
 
 ```bash

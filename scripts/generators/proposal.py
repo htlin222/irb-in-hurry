@@ -87,8 +87,8 @@ def generate_proposal_summary(config, output_dir):
         v = prop.get(key)
         if isinstance(v, list):
             return "\n".join(f"{i}. {x}" for i, x in enumerate(v, 1))
-        # YAML folded scalars join lines with spaces; drop them next to CJK
-        v = re.sub(r"\s*([\u3000-\u303f\u4e00-\u9fff\uff00-\uffef])\s*", r"\1",
+        # Wrapped source lines leave spaces; drop them next to CJK, keep newlines
+        v = re.sub(r"[^\S\n]*([\u3000-\u303f\u4e00-\u9fff\uff00-\uffef])[^\S\n]*", r"\1",
                    (v or "").strip())
         return v or placeholder
 
@@ -194,7 +194,7 @@ def generate_proposal_summary(config, output_dir):
     add_p(doc, "※ 本摘要以不超過2頁為原則。", size=9,
           alignment=WD_ALIGN_PARAGRAPH.RIGHT, sa=Pt(2))
 
-    path = os.path.join(output_dir, form_filename("中文計畫摘要", config, "proposal"))
+    path = os.path.join(output_dir, form_filename("中文計畫摘要", config, "待核發"))
     doc.save(path)
     return path
 

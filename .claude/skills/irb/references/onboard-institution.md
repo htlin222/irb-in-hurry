@@ -70,7 +70,7 @@ for every name or label, and never hardcode them. Register it with its full modu
 ## 7. Run and verify
 
 ```bash
-# config.yml → institution: <id>
+# config.toml → institution = "<id>"
 make templates && make all
 ```
 

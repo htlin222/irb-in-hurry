@@ -8,9 +8,9 @@ same pipeline. KFSYSCC is the reference implementation, with 43 forms in `instit
 ```
  study facts            institution knowledge                 per-submission output
 ┌───────────┐   ┌──────────────────────────────────────┐   ┌──────────────────────────┐
-│config.yml │──▶│ forms.py   phase + study → form list │──▶│ output/*.docx            │
+│config.toml│──▶│ forms.py   phase + study → form list │──▶│ output/*.docx            │
 │ (one SSOT)│   │ generators fill / rebuild each form  │   │ output/*.pdf (fonts emb.)│
-└───────────┘   │ profile.yml page · font · names      │   │ checklist.md  ■/□        │
+└───────────┘   │ profile.toml page · font · names     │   │ checklist.md  ■/□        │
                 └──────────────────────────────────────┘   │ layout_report.md (gate)  │
                          ▲                                  └──────────────────────────┘
                 templates/<id>/  official blanks  ──────────────▶ compared against
@@ -20,8 +20,8 @@ same pipeline. KFSYSCC is the reference implementation, with 43 forms in `instit
 
 | Layer | Lives in | Holds | Never holds |
 |---|---|---|---|
-| **Study data** | `config.yml` | IRB no., titles, PI, dates, N, flags, phase | anything about the institution |
-| **Institution profile** | `institutions/<id>/profile.yml` | names, IRB-number label, submission address, page size + margins, form font, where the blanks are | study data |
+| **Study data** | `config.toml` (+ `@` files) | IRB no., titles, PI, dates, N, flags, phase | anything about the institution |
+| **Institution profile** | `institutions/<id>/profile.toml` | names, IRB-number label, submission address, page size + margins, form font, where the blanks are | study data |
 | **Form pack** | `institutions/<id>/forms.py` | `FORM_REGISTRY` (form id → name, generator) and `PHASE_FORMS` (routing rules) | layout constants |
 | **Generators** | `blank_generator(...)` or a python-docx module | how one form gets its values | hardcoded names, emails, fonts (read `institution()`) |
 | **Gate** | `scripts/validate_layout.py` | checks output against the blanks + profile | institution-specific code |
@@ -29,8 +29,8 @@ same pipeline. KFSYSCC is the reference implementation, with 43 forms in `instit
 The scripts in `scripts/` (`generate_all`, `form_selector`, `docx_utils`,
 `template_fill`, `validate_layout`, `fetch_templates`, `convert`, `checklist`)
 are institution-agnostic. They read the active profile through
-`scripts/institution.py` (`IRB_INSTITUTION` env var, then `institution:` in
-`config.yml`, then `kfsyscc`).
+`scripts/institution.py` (`IRB_INSTITUTION` env var, then `institution` in
+`config.toml`, then `kfsyscc`).
 
 ## Two ways to generate a form
 
@@ -53,7 +53,7 @@ where filling can't work. Both kinds can coexist in one `FORM_REGISTRY`.
    paper size, margins (`<w:sectPr>`), dominant CJK/Latin font, language tag,
    table labels, `label：＿＿` fill-in lines and checkbox options in
    `form_inventory.md`.
-3. **Describe the institution once** in `profile.yml`. Anything that would
+3. **Describe the institution once** in `profile.toml`. Anything that would
    otherwise be a string literal in a generator goes here.
 4. **Map labels to study fields** in `forms.py`. Each label maps to a
    format string (`"{pi.name}（{pi.dept}）"`) or a callable. Each checkbox
@@ -103,11 +103,11 @@ Not handled automatically, so rebuild these forms or edit the blank: text boxes 
 ## Adapting checklist
 
 - [ ] Blanks in `templates/<id>/`, untouched
-- [ ] `make onboard INST=<id>` → `profile.yml`, `forms.py`, `form_inventory.md`
-- [ ] Every `TODO` in `profile.yml` resolved (names, email, font aliases, lang)
+- [ ] `make onboard INST=<id>` → `profile.toml`, `forms.py`, `form_inventory.md`
+- [ ] Every `TODO` in `profile.toml` resolved (names, email, font aliases, lang)
 - [ ] Every label, fill-in line and checkbox in `form_inventory.md` mapped or deliberately left blank
 - [ ] `PHASE_FORMS` mirrors the institution's own submission checklist
-- [ ] `institution: <id>` in `config.yml`, `make all` passes with 0 errors
+- [ ] `institution = "<id>"` in `config.toml`, `make all` passes with 0 errors
 - [ ] Side-by-side previews in `output/preview/compare/` look right
 - [ ] Any new config fields documented in `.claude/skills/irb/references/config-schema.md`
 

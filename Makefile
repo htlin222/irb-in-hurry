@@ -1,17 +1,34 @@
-.PHONY: help setup generate pdf dashboard checklist review clean test lint format all templates validate \
-        onboard new closure amendment continuing
+.PHONY: help setup check generate pdf templates onboard validate all dashboard checklist review test lint format clean init \
+        set-phase new amendment re_review continuing closure sae ib_update import suspension appeal
 
-CONFIG := config.yml
-OUTPUT := output
-RUN := uv run
+# Single source of truth: config.toml (+ the files it references, e.g. cv.toml, 中文計畫摘要.md)
+CONFIG  := config.toml
+OUTPUT  := output
+RUN     := uv run
+# Override the phase for one run without editing config.toml: make all PHASE=closure
+PHASE   ?=
+export PHASE
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
+	@printf "  \033[36m%-12s\033[0m %s\n" "<phase>" "make closure|amendment|continuing|… = make all PHASE=<phase>"
 
 setup: ## Install dependencies
 	uv sync
 
-generate: ## Generate DOCX forms from config.yml
+init: ## Start from an example: make init EXAMPLE=tdxd-her2low (refuses to overwrite)
+	@test -n "$(EXAMPLE)" || { echo "Usage: make init EXAMPLE=<name>"; ls examples; exit 1; }
+	@for f in examples/$(EXAMPLE)/*; do \
+		b=$$(basename "$$f"); \
+		if [ -e "$$b" ] && [ -z "$(FORCE)" ]; then echo "✗ $$b exists (FORCE=1 to overwrite)"; exit 1; fi; \
+	done
+	cp examples/$(EXAMPLE)/* .
+	@$(RUN) python scripts/config.py $(CONFIG)
+
+check: ## Resolve @references in config.toml and validate required fields
+	$(RUN) python scripts/config.py $(CONFIG)
+
+generate: ## Generate DOCX forms from config.toml
 	$(RUN) python scripts/generate_all.py $(CONFIG) --output $(OUTPUT)
 
 pdf: ## Convert DOCX → PDF + PNG previews
@@ -48,20 +65,12 @@ format: ## Auto-fix lint issues (imports, etc.)
 	$(RUN) ruff check --fix .
 
 clean: ## Remove generated files
-	rm -rf $(OUTPUT)/*.docx $(OUTPUT)/*.pdf $(OUTPUT)/preview $(OUTPUT)/layout_report.md checklist.md
+	rm -rf $(OUTPUT) checklist.md
 
-new: ## Set phase to new case + generate
-	$(RUN) python scripts/set_phase.py new $(CONFIG)
-	$(MAKE) all
+set-phase: ## Persist the phase in config.toml (keeps comments): make set-phase PHASE=closure
+	@test -n "$(PHASE)" || { echo "Usage: make set-phase PHASE=<phase>"; exit 1; }
+	$(RUN) python scripts/set_phase.py $(PHASE) $(CONFIG)
 
-closure: ## Set phase to closure + generate
-	$(RUN) python scripts/set_phase.py closure $(CONFIG)
-	$(MAKE) all
-
-amendment: ## Set phase to amendment + generate
-	$(RUN) python scripts/set_phase.py amendment $(CONFIG)
-	$(MAKE) all
-
-continuing: ## Set phase to continuing review + generate
-	$(RUN) python scripts/set_phase.py continuing $(CONFIG)
-	$(MAKE) all
+# Phase shortcuts: make closure == make all PHASE=closure (config.toml untouched)
+new amendment re_review continuing closure sae ib_update import suspension appeal:
+	@$(MAKE) --no-print-directory all PHASE=$@

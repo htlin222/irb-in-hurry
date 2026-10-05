@@ -1,17 +1,16 @@
-"""Active institution profile (institutions/<id>/profile.yml).
+"""Active institution profile (institutions/<id>/profile.toml).
 
 Everything that differs between IRBs — committee name, IRB-number label,
 submission address, where the blank forms live, page setup, form font, and
 which forms exist — is read from the profile, never hardcoded in scripts.
 
-Resolution order: IRB_INSTITUTION env var → `institution:` in config.yml →
+Resolution order: IRB_INSTITUTION env var → `institution` in config.toml →
 DEFAULT_INSTITUTION.
 """
 import os
 import re
+import tomllib
 from functools import lru_cache
-
-import yaml
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INSTITUTIONS_DIR = os.path.join(ROOT, "institutions")
@@ -20,7 +19,7 @@ ENV_VAR = "IRB_INSTITUTION"
 
 
 class Profile:
-    """Read-only view over profile.yml with derived conveniences."""
+    """Read-only view over profile.toml with derived conveniences."""
 
     def __init__(self, data):
         self.data = data
@@ -69,11 +68,11 @@ class Profile:
 
 
 def _id_from_config_file(path=None):
-    path = path or os.path.join(ROOT, "config.yml")
+    path = path or os.path.join(ROOT, "config.toml")
     try:
-        with open(path, encoding="utf-8") as f:
-            return (yaml.safe_load(f) or {}).get("institution")
-    except OSError:
+        with open(path, "rb") as f:
+            return tomllib.load(f).get("institution")
+    except (OSError, tomllib.TOMLDecodeError):
         return None
 
 
@@ -86,13 +85,13 @@ def resolve_id(config=None):
 
 @lru_cache(maxsize=None)
 def load(inst_id):
-    path = os.path.join(INSTITUTIONS_DIR, inst_id, "profile.yml")
+    path = os.path.join(INSTITUTIONS_DIR, inst_id, "profile.toml")
     if not os.path.exists(path):
         known = sorted(d for d in os.listdir(INSTITUTIONS_DIR)
-                       if os.path.exists(os.path.join(INSTITUTIONS_DIR, d, "profile.yml")))
+                       if os.path.exists(os.path.join(INSTITUTIONS_DIR, d, "profile.toml")))
         raise FileNotFoundError(f"No institution profile '{inst_id}' (have: {', '.join(known)})")
-    with open(path, encoding="utf-8") as f:
-        return Profile(yaml.safe_load(f))
+    with open(path, "rb") as f:
+        return Profile(tomllib.load(f))
 
 
 def current():
@@ -100,7 +99,7 @@ def current():
 
 
 def activate(config):
-    """Make config's `institution:` the active profile for this process."""
+    """Make config's `institution` the active profile for this process."""
     if not os.environ.get(ENV_VAR):
         os.environ[ENV_VAR] = resolve_id(config)
     return current()
