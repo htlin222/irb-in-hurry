@@ -4,18 +4,23 @@
 Applies 45 CFR 46.111 criteria and institutional review patterns to
 catch errors, inconsistencies, and missing elements before real submission.
 """
+import glob
 import os
 import sys
-import glob
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from docx import Document
-from scripts.config import load_config, PHASE_NAMES
-from scripts.form_selector import select_forms, FORM_REGISTRY
+
+from scripts.config import ConfigError, load_config
+from scripts.docx_utils import form_id_from_path
+from scripts.form_selector import PHASE_NAMES, select_forms
 from scripts.review_criteria import (
-    REVIEW_CRITERIA, PLACEHOLDER_PATTERNS, DECISIONS, SEVERITY,
+    DECISIONS,
+    PLACEHOLDER_PATTERNS,
+    REVIEW_CRITERIA,
+    SEVERITY,
 )
 
 
@@ -152,7 +157,8 @@ def check_consent(config, form_texts):
             # Check for contact info in consent
             for fid in consent_forms:
                 text = form_texts[fid]
-                if config["pi"]["phone"] not in text and config["pi"]["email"] not in text:
+                contacts = [c for c in (config["pi"].get("phone"), config["pi"].get("email")) if c]
+                if contacts and not any(c in text for c in contacts):
                     findings.append(("suggestion", f"**{fid}**: PI contact info (phone/email) should appear in consent form"))
         else:
             results.append(("consent_elements", False, "No consent form generated but consent_waiver is false"))
@@ -184,7 +190,6 @@ def check_risk_benefit(config, form_texts):
 
     # Check for risk description in SF002
     if "SF002" in form_texts:
-        text = form_texts["SF002"]
         if is_retro:
             results.append(("risk_minimization", True, "Retrospective study — minimal risk inherent in design"))
         else:
@@ -260,7 +265,6 @@ def check_study_design(config, form_texts):
     findings = []
 
     study_type = config["study"].get("type", "")
-    phase = config.get("phase", "")
 
     # Check type-form alignment
     if study_type == "retrospective":
@@ -402,15 +406,14 @@ def run_review(config_path="config.toml", output_dir="output", phase=None):
     # Load all generated DOCX files
     docx_files = sorted(glob.glob(os.path.join(output_dir, "*.docx")))
     if not docx_files:
-        print("✗ No DOCX files found in output/. Run `make generate` first.")
+        print(f"✗ No DOCX files found in {output_dir}/. Run `make generate` first.")
         sys.exit(1)
 
     form_texts = {}
     for f in docx_files:
-        basename = os.path.basename(f)
-        # Extract form ID (e.g., "SF001" from "SF001_20260401A.docx")
-        fid = basename.split("_")[0]
-        form_texts[fid] = extract_text(f)
+        fid = form_id_from_path(f)
+        if fid:
+            form_texts[fid] = extract_text(f)
 
     print(f"Reviewing {len(form_texts)} forms for {phase_zh} ({irb_no})...")
 
@@ -499,7 +502,7 @@ def run_review(config_path="config.toml", output_dir="output", phase=None):
         lines.append(f"*{criteria['regulatory_basis']}*")
         lines.append("")
         if category in all_results:
-            for item_id, passed, detail in all_results[category]:
+            for _item_id, passed, detail in all_results[category]:
                 mark = "■" if passed else "□"
                 lines.append(f"- {mark} {detail}")
         lines.append("")
@@ -526,14 +529,13 @@ def run_review(config_path="config.toml", output_dir="output", phase=None):
 
     # 45 CFR 46.111 summary
     is_retro = config["study"].get("type") == "retrospective"
-    review_type = config["study"].get("review_type", "")
     lines.extend([
         "---",
         "",
         "## 45 CFR 46.111 核准要件摘要",
         "",
-        f"| # | Criterion | Status |",
-        f"|---|-----------|--------|",
+        "| # | Criterion | Status |",
+        "|---|-----------|--------|",
         f"| 1 | Risk minimization | {'■ Retrospective design — minimal risk' if is_retro else '□ Verify in protocol'} |",
         f"| 2 | Reasonable risk-benefit | {'■ Knowledge benefit, no subject risk' if is_retro else '□ Verify in protocol'} |",
         f"| 3 | Equitable selection | {'■ Consecutive patients from chart review' if is_retro else '□ Verify recruitment plan'} |",
@@ -549,10 +551,10 @@ def run_review(config_path="config.toml", output_dir="output", phase=None):
     lines.extend([
         "---",
         "",
-        f"*本審查意見由 IRB-in-Hurry Reviewer 自動產生，僅供參考。*",
-        f"*正式審查結果以和信治癌中心醫院人體試驗委員會之決議為準。*",
-        f"*送審請寄：irb@kfsyscc.org*",
-        f"*審查指引：see .claude/skills/irb/references/reviewer-guide.md*",
+        "*本審查意見由 IRB-in-Hurry Reviewer 自動產生，僅供參考。*",
+        "*正式審查結果以和信治癌中心醫院人體試驗委員會之決議為準。*",
+        "*送審請寄：irb@kfsyscc.org*",
+        "*審查指引：see .claude/skills/irb/references/reviewer-guide.md*",
     ])
 
     # Write to reviewers/
@@ -579,4 +581,8 @@ def run_review(config_path="config.toml", output_dir="output", phase=None):
 
 if __name__ == "__main__":
     config_path = sys.argv[1] if len(sys.argv) > 1 else "config.toml"
-    run_review(config_path, phase=os.environ.get("PHASE") or None)
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else "output"
+    try:
+        run_review(config_path, output_dir, phase=os.environ.get("PHASE") or None)
+    except (ConfigError, FileNotFoundError) as e:
+        sys.exit(f"✗ {e}")

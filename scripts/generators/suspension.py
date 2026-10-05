@@ -4,11 +4,19 @@ Generates SF047, SF048 forms from config dict.
 """
 import os
 
-from scripts.docx_utils import *
-from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt
 
+from scripts.docx_utils import (
+    add_ct,
+    add_footer,
+    add_header,
+    add_p,
+    apply_tb,
+    init_doc,
+    set_cell_shading,
+)
 
 # ---------------------------------------------------------------------------
 # SF047 — 計畫暫停/提前終止審查送審資料表 (v4)
@@ -81,7 +89,6 @@ def generate_sf047(config, output_dir):
 def generate_sf048(config, output_dir):
     """Generate SF048: suspension/early termination report."""
     doc = init_doc(sz=12)
-    pi = config["pi"]
     subjects = config["subjects"]
 
     # Title

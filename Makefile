@@ -1,5 +1,5 @@
-.PHONY: help setup check generate pdf templates validate all dashboard checklist review test clean init \
-        new amendment re_review continuing closure sae ib_update import suspension appeal
+.PHONY: help setup check generate pdf templates validate all dashboard checklist review test lint format clean init \
+        set-phase new amendment re_review continuing closure sae ib_update import suspension appeal
 
 # Single source of truth: config.toml (+ the files it references, e.g. cv.toml, 中文計畫摘要.md)
 CONFIG  := config.toml
@@ -43,19 +43,29 @@ validate: ## Layout/font safety gate vs official blank forms (Win/Mac)
 all: generate pdf validate dashboard ## Generate + convert + validate + dashboard
 
 dashboard: ## Show submission status
-	./dashboard.sh $(CONFIG)
+	./dashboard.sh $(CONFIG) $(OUTPUT)
 
 checklist: ## View checklist
 	@cat checklist.md
 
 review: ## Run simulated IRB reviewer on generated forms
-	$(RUN) python scripts/reviewer.py $(CONFIG)
+	$(RUN) python scripts/reviewer.py $(CONFIG) $(OUTPUT)
 
 test: ## Run tests
-	$(RUN) pytest tests/ -v
+	$(RUN) pytest -v
+
+lint: ## Lint Python sources
+	$(RUN) ruff check .
+
+format: ## Auto-fix lint issues (imports, etc.)
+	$(RUN) ruff check --fix .
 
 clean: ## Remove generated files
 	rm -rf $(OUTPUT) checklist.md
+
+set-phase: ## Persist the phase in config.toml (keeps comments): make set-phase PHASE=closure
+	@test -n "$(PHASE)" || { echo "Usage: make set-phase PHASE=<phase>"; exit 1; }
+	$(RUN) python scripts/set_phase.py $(PHASE) $(CONFIG)
 
 # Phase shortcuts: make closure == make all PHASE=closure (config.toml untouched)
 new amendment re_review continuing closure sae ib_update import suspension appeal:

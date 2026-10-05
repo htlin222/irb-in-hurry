@@ -97,10 +97,13 @@ make all
 | `make pdf` | 轉換為 PDF + PNG 預覽 |
 | `make dashboard` | 顯示送審狀態 |
 | `make checklist` | 檢視 ■/□ 清單 |
+| `make review` | 模擬 IRB 審查委員檢閱產生的表單 |
 | `make test` | 執行測試 |
+| `make lint` | ruff 程式碼檢查（`make format` 自動修正） |
 | `make clean` | 清除產生的檔案 |
 | `make closure` | 即 `make all PHASE=closure`；任何階段皆可（`new`、`amendment`、`continuing`、`sae`…），不會改寫 `config.toml` |
 | `make review` | 模擬 IRB 審查委員意見 |
+| `make set-phase PHASE=closure` | 將階段寫入 `config.toml`（只改 `phase =` 那一行，保留註解） |
 
 ### 工作流程
 

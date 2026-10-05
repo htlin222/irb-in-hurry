@@ -106,7 +106,8 @@ planned_n      = 0
 consent_waiver = false
 ```
 
-Phase switches never edit the file: `make closure` == `make all PHASE=closure`.
+Phase switches never re-dump the file: `make closure` == `make all PHASE=closure` (one-off);
+`make set-phase PHASE=closure` persists it by editing only the `phase =` line.
 
 See [config-schema.md](references/config-schema.md) for the complete field reference.
 
@@ -125,10 +126,11 @@ cv.toml                        # Study team (@cv.toml#pi, @cv.toml#co_pi)
 中文計畫摘要.md                 # Proposal prose (@中文計畫摘要.md)
 examples/                      # Complete example studies (make init EXAMPLE=...)
 scripts/
-  config.py                   # config.toml loader: @references, Markdown, validation
+  config.py                   # config.toml loader: @references, Markdown, validation (ConfigError lists every problem)
   docx_utils.py               # Shared DOCX helpers (init_doc, add_p, add_ct, etc.)
   form_selector.py            # Phase + study type -> required forms
-  generate_all.py             # Main orchestrator
+  generate_all.py             # Main orchestrator (--phase, --output, --verbose)
+  set_phase.py                # Persist phase in config.toml, keeping comments
   checklist.py                # Generates checklist.md with status
   convert.py                  # DOCX -> PDF -> PNG pipeline
   generators/

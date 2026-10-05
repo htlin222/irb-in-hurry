@@ -1,17 +1,20 @@
 """Layout safety gate: generated forms must be A4 + 標楷體 on every platform."""
 import importlib
-import os
-import sys
 
 import pytest
 from docx import Document
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from scripts.docx_utils import (apply_official_page_setup, form_id_from_path,
-                                init_doc, add_p, load_config, official_margins)
+from scripts.docx_utils import (
+    add_p,
+    apply_official_page_setup,
+    form_filename,
+    form_id_from_path,
+    init_doc,
+    load_config,
+    official_margins,
+)
 from scripts.form_selector import get_generator, select_forms
 from scripts.validate_layout import validate_file
-
 
 PHASES = ["new", "amendment", "continuing", "closure"]
 
@@ -85,8 +88,17 @@ def test_non_big5_characters_warned(tmp_path):
     ("SF002_KF-001.docx", "SF002"),
     ("IRB_SF90_同意書.docx", "SF090"),
     ("中文計畫摘要_proposal.docx", "PROPOSAL"),
-    ("中文計畫摘要_20250801A.docx", "PROPOSAL"),
+    ("中文計畫摘要_20250801A.docx", "PROPOSAL"),  # the name proposal.py actually writes
     ("checklist.docx", None),
 ])
 def test_form_id_from_path(name, fid):
     assert form_id_from_path(name) == fid
+
+
+@pytest.mark.parametrize("irb_no,expected", [
+    ("20250801A", "SF001_20250801A.docx"),
+    ("", "SF001_新案審查送審資料表.docx"),
+    ("KF/2025 01", "SF001_KF-2025-01.docx"),
+])
+def test_form_filename(irb_no, expected):
+    assert form_filename("SF001", {"study": {"irb_no": irb_no}}, "新案審查送審資料表") == expected

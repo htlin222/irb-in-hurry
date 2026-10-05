@@ -29,8 +29,9 @@ Markdown rules: `## 二、研究背景` → key `background` (numbering ignored,
 no space next to CJK — and blank lines separate paragraphs). `<!-- comments -->` and the
 `# title` line are dropped; `**bold**` / `` `code` `` markers are stripped.
 
-Required (validated): `phase`, `study.title_zh`, `study.type`, `study.review_type`,
-`pi.name`, `pi.dept`, `dates.study_start`, `dates.study_end`, `subjects.planned_n`.
+Required (validated): `phase`, `study.title_zh`, `study.title_en`, `study.type`,
+`study.review_type`, `pi.name`, `pi.dept`, `dates.study_start`, `dates.study_end`,
+`subjects.planned_n`.
 
 ## `phase` (required)
 
@@ -38,6 +39,18 @@ One of: `new`, `amendment`, `re_review`, `continuing`, `closure`, `sae`, `ib_upd
 
 Top-level key (must appear before the first `[table]`). Override per run without editing
 the file: `make closure`, `make all PHASE=closure`, or `generate_all.py --phase closure`.
+To persist a switch, `make set-phase PHASE=closure` (`scripts/set_phase.py`) rewrites only
+the value on the `phase =` line, keeping its comment and the rest of the file.
+
+## Validation
+
+`scripts/config.py` validates the resolved config on load and lists every problem at
+once: missing required fields, unknown `phase` / `study.type` / `study.review_type`,
+sections of the wrong shape (e.g. `pi` resolving to text instead of a table), co-PIs
+without a `name`, and quoted booleans (`"false"` is a non-empty string and would count
+as true — write `false`). Optional sections (`co_pi`, `closure`, `amendment`,
+`continuing_review`) may be omitted entirely; they and optional fields generators index
+directly are filled with neutral defaults (`DEFAULTS` / `BOOL_FIELDS` in `scripts/config.py`).
 
 ## `study` (required)
 

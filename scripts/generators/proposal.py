@@ -5,13 +5,18 @@ Required for new case submission. Max 2 pages.
 """
 import os
 import re
-from scripts.docx_utils import (
-    init_doc, add_p, add_header, add_footer,
-    set_run_font, add_ct, apply_tb, set_cell_shading, check,
-)
-from docx.shared import Pt, Cm
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+
 from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Pt
+
+from scripts.docx_utils import (
+    add_ct,
+    add_p,
+    apply_tb,
+    form_filename,
+    init_doc,
+)
 
 
 def _study_type_zh(config):
@@ -188,8 +193,7 @@ def generate_proposal_summary(config, output_dir):
     add_p(doc, "※ 本摘要以不超過2頁為原則。", size=9,
           alignment=WD_ALIGN_PARAGRAPH.RIGHT, sa=Pt(2))
 
-    irb_no = config["study"]["irb_no"] or "待核發"
-    path = os.path.join(output_dir, f"中文計畫摘要_{irb_no}.docx")
+    path = os.path.join(output_dir, form_filename("中文計畫摘要", config, "待核發"))
     doc.save(path)
     return path
 

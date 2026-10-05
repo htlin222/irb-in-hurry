@@ -1,11 +1,9 @@
 """Tests for form_selector.py."""
-import pytest
-import os
-import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pytest
+
 from scripts.config import load_config
-from scripts.form_selector import select_forms, get_generator, FORM_REGISTRY
+from scripts.form_selector import FORM_REGISTRY, get_generator, select_forms
 
 
 @pytest.fixture

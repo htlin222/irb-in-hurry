@@ -16,6 +16,12 @@ ignored and Chinese headings map to keys via SECTION_KEYS); a section made only
 of ``-``/``1.`` items becomes a list; other text becomes paragraphs; HTML
 comments are dropped, so templates can carry writing guidance.
 
+After resolution the config is validated and every problem is reported at once
+(required fields, unknown phase / study.type / study.review_type, quoted
+booleans), and optional sections are filled with neutral defaults so
+generators can index them directly.
+Field reference: .claude/skills/irb/references/config-schema.md
+
 CLI:
     python scripts/config.py [config.toml] [--phase X]           # check + summary
     python scripts/config.py [config.toml] [--phase X] --json    # resolved config
@@ -29,12 +35,9 @@ import shlex
 import sys
 import tomllib
 
-PHASE_NAMES = {
-    "new": "新案審查", "amendment": "修正案審查", "re_review": "複審案審查",
-    "continuing": "期中審查", "closure": "結案審查", "sae": "嚴重不良反應事件審查",
-    "ib_update": "主持人手冊更新", "import": "專案進口審查",
-    "suspension": "計畫暫停/提前終止", "appeal": "申覆案審查",
-}
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.form_selector import PHASE_FORMS, PHASE_NAMES  # noqa: E402
 
 # Markdown `## heading` → config key. Unlisted headings are used verbatim.
 SECTION_KEYS = {
@@ -50,17 +53,43 @@ SECTION_KEYS = {
     "附件": "attachments",
 }
 
+STUDY_TYPES = ("retrospective", "prospective", "clinical_trial", "genetic")
+REVIEW_TYPES = ("exempt", "expedited", "full_board")
+
+# (section, field) pairs that must be present and non-empty
 REQUIRED = [
-    ("phase",), ("study", "title_zh"), ("study", "type"), ("study", "review_type"),
-    ("pi", "name"), ("pi", "dept"), ("dates", "study_start"), ("dates", "study_end"),
+    ("study", "title_zh"), ("study", "title_en"), ("study", "type"), ("study", "review_type"),
+    ("pi", "name"), ("pi", "dept"),
+    ("dates", "study_start"), ("dates", "study_end"),
     ("subjects", "planned_n"),
+]
+
+# Optional fields that generators index directly → default.
+DEFAULTS = {
+    "study": {"irb_no": "", "drug_device": False, "genetic": False, "multicenter": False},
+    "pi": {"phone": "", "email": ""},
+    "co_pi": [],
+    "dates": {},
+    "subjects": {"consent_waiver": False, "vulnerable_population": False},
+    "closure": {"data_safety": {}},
+    "amendment": {},
+    "continuing_review": {},
+}
+
+# Fields that must be real TOML booleans: a quoted "false" is a non-empty string
+# and would silently count as true when selecting forms.
+BOOL_FIELDS = [
+    ("study", "drug_device"), ("study", "genetic"), ("study", "multicenter"),
+    ("subjects", "consent_waiver"), ("subjects", "vulnerable_population"),
+    ("amendment", "affects_consent"), ("amendment", "affects_risk"),
+    ("continuing_review", "extension_requested"), ("closure", "specimens"),
 ]
 
 _CJK = r"　-〿一-鿿＀-￯"
 
 
-class ConfigError(Exception):
-    """Config cannot be loaded or is missing required fields."""
+class ConfigError(ValueError):
+    """Config cannot be loaded, is missing required data or has invalid values."""
 
 
 # ── Markdown ────────────────────────────────────────────────────────────────
@@ -87,17 +116,17 @@ _ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+(.*)$")
 def _block(body):
     """Section body → list (all items) or paragraph string."""
     lines = body.strip("\n").splitlines()
-    if not any(l.strip() for l in lines):
+    if not any(ln.strip() for ln in lines):
         return ""
-    starts = [l for l in lines if l.strip() and not l.startswith((" ", "\t"))]
-    if starts and all(_ITEM.match(l) for l in starts):
+    starts = [ln for ln in lines if ln.strip() and not ln.startswith((" ", "\t"))]
+    if starts and all(_ITEM.match(ln) for ln in starts):
         items = []
-        for l in lines:
-            m = _ITEM.match(l) if not l.startswith((" ", "\t")) else None
+        for ln in lines:
+            m = _ITEM.match(ln) if not ln.startswith((" ", "\t")) else None
             if m:
                 items.append([m.group(1)])
-            elif l.strip():
-                items[-1].append(l)  # continuation line
+            elif ln.strip():
+                items[-1].append(ln)  # continuation line
         return [_inline(_join(i)) for i in items]
     paras = re.split(r"\n\s*\n", "\n".join(lines))
     return "\n".join(_inline(_join(p.splitlines())) for p in paras if p.strip())
@@ -113,9 +142,9 @@ def parse_markdown(text):
     text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     parts = re.split(r"^##[ \t]+(.+?)[ \t#]*$", text, flags=re.M)
     if len(parts) == 1:
-        body = "\n".join(l for l in text.splitlines() if not l.startswith("# "))
+        body = "\n".join(ln for ln in text.splitlines() if not ln.startswith("# "))
         return _block(body)
-    return {_section_key(h): _block(b) for h, b in zip(parts[1::2], parts[2::2])}
+    return {_section_key(h): _block(b) for h, b in zip(parts[1::2], parts[2::2], strict=True)}
 
 
 # ── References ──────────────────────────────────────────────────────────────
@@ -151,19 +180,65 @@ def _resolve(value, base, stack):
     return _resolve(data, os.path.dirname(path), stack + [path])
 
 
-def _missing(config):
-    out = []
-    for keys in REQUIRED:
-        node = config
-        for k in keys:
-            node = node.get(k) if isinstance(node, dict) else None
-        if node in (None, ""):
-            out.append(".".join(keys))
-    return out
+# ── Validation ──────────────────────────────────────────────────────────────
+
+def _apply_defaults(config):
+    for section, default in DEFAULTS.items():
+        if config.get(section) is None:
+            config[section] = {} if isinstance(default, dict) else list(default)
+        if isinstance(default, dict):
+            for key, value in default.items():
+                if config[section].get(key) is None:
+                    config[section][key] = value.copy() if isinstance(value, (dict, list)) else value
+
+
+def validate_config(config, source="config.toml"):
+    """Validate and normalize a resolved config dict in place. Raises ConfigError listing every problem."""
+    if not isinstance(config, dict):
+        raise ConfigError(f"{source}: expected a table, got {type(config).__name__}")
+
+    problems = []
+    for section, default in DEFAULTS.items():
+        if config.get(section) is not None and not isinstance(config[section], type(default)):
+            kind = "a table" if isinstance(default, dict) else "an array of tables"
+            problems.append(f"`{section}` must be {kind}")
+    if problems:
+        raise ConfigError(f"{source}:\n  - " + "\n  - ".join(problems))
+
+    _apply_defaults(config)
+
+    for section, field in REQUIRED:
+        if str(config[section].get(field, "")).strip() == "":
+            problems.append(f"`{section}.{field}` is required")
+
+    phase = config.get("phase")
+    if phase not in PHASE_FORMS:
+        problems.append(f"unknown phase: `phase` must be one of {', '.join(PHASE_FORMS)} (got {phase!r})")
+
+    study = config["study"]
+    for field, allowed in (("type", STUDY_TYPES), ("review_type", REVIEW_TYPES)):
+        value = study.get(field)
+        if value and value not in allowed:
+            problems.append(f"`study.{field}` must be one of {', '.join(allowed)} (got {value!r})")
+
+    for section, field in BOOL_FIELDS:
+        value = config[section].get(field, False)
+        if not isinstance(value, bool):
+            problems.append(f"`{section}.{field}` must be true or false without quotes (got {value!r})")
+
+    for i, cp in enumerate(config["co_pi"]):
+        if not isinstance(cp, dict) or not cp.get("name"):
+            problems.append(f"`co_pi[{i}]` needs a `name`")
+        else:
+            cp.setdefault("dept", "")
+
+    if problems:
+        raise ConfigError(f"{source} has {len(problems)} problem(s):\n  - " + "\n  - ".join(problems))
+    return config
 
 
 def load_config(path="config.toml", phase=None):
-    """Load config.toml, inline every @reference, apply a phase override."""
+    """Load config.toml, inline every @reference, apply a phase override, validate."""
     path = os.path.abspath(path)
     if not os.path.isfile(path):
         raise ConfigError(f"config not found: {path}")
@@ -173,12 +248,7 @@ def load_config(path="config.toml", phase=None):
         raise ConfigError(f"invalid TOML: {e}") from e
     if phase:
         config["phase"] = phase
-    missing = _missing(config)
-    if missing:
-        raise ConfigError(f"{os.path.basename(path)}: missing required field(s): {', '.join(missing)}")
-    if config["phase"] not in PHASE_NAMES:
-        raise ConfigError(f"unknown phase {config['phase']!r}; expected one of: {', '.join(PHASE_NAMES)}")
-    return config
+    return validate_config(config, source=os.path.basename(path))
 
 
 # ── CLI ─────────────────────────────────────────────────────────────────────

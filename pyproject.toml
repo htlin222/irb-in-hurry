@@ -12,4 +12,22 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest",
+    "ruff",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["templates", "output"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "B", "I"]
+# Form text is long CJK literals; wrapping them hurts readability.
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["scripts"]

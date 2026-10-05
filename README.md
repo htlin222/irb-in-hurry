@@ -130,10 +130,13 @@ make all
 | `make pdf` | Convert DOCX to PDF + PNG previews |
 | `make dashboard` | Show submission status |
 | `make checklist` | View ■/□ checklist |
+| `make review` | Simulated IRB reviewer on generated forms |
 | `make test` | Run pytest |
+| `make lint` | Lint with ruff (`make format` auto-fixes) |
 | `make clean` | Remove generated files |
 | `make closure` | `make all PHASE=closure` — any phase works (`new`, `amendment`, `continuing`, `sae`, …); `config.toml` is never rewritten |
 | `make review` | Simulated IRB reviewer on the generated forms |
+| `make set-phase PHASE=closure` | Persist the phase in `config.toml` (edits only the `phase =` line, comments kept) |
 
 ### Workflow
 
@@ -249,10 +252,11 @@ irb-in-hurry/
 ├── Makefile                   # Easy commands
 ├── dashboard.sh               # Status overview
 ├── scripts/
-│   ├── config.py              # config.toml loader: @references, validation, make check
+│   ├── config.py              # config.toml loader: @references, validation (clear errors, defaults), make check
 │   ├── docx_utils.py          # Shared DOCX helpers
 │   ├── form_selector.py       # 43-form registry + routing
-│   ├── generate_all.py        # Main orchestrator
+│   ├── generate_all.py        # Main orchestrator (--phase, --output, --verbose)
+│   ├── set_phase.py           # Persist phase in config.toml, keeping comments
 │   ├── checklist.py           # ■/□ checklist generator
 │   ├── convert.py             # DOCX→PDF→PNG pipeline
 │   ├── fetch_templates.py     # Download official blank forms
