@@ -6,15 +6,15 @@ import pytest
 from docx import Document
 
 from scripts import generate_all
-from scripts.docx_utils import load_config
+from scripts.config import load_config
 from scripts.form_selector import FORM_REGISTRY, PHASE_FORMS, get_generator, select_forms
 
-FIXTURES = sorted(glob.glob("tests/fixtures/*.yml"))
+FIXTURES = ["config.toml"] + sorted(glob.glob("examples/*/config.toml"))
 
 
 @pytest.fixture
 def retro_config():
-    return load_config("tests/fixtures/sample_retrospective.yml")
+    return load_config("examples/gcsf-retrospective/config.toml")
 
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def test_every_registered_generator_runs(form_id, retro_config, output_dir):
 
 
 @pytest.mark.parametrize("phase", sorted(PHASE_FORMS))
-@pytest.mark.parametrize("fixture", FIXTURES, ids=os.path.basename)
+@pytest.mark.parametrize("fixture", FIXTURES, ids=lambda p: os.path.dirname(p) or "root")
 def test_generate_all_every_fixture_and_phase(fixture, phase, tmp_path):
     """The orchestrator succeeds for every shipped fixture in every phase."""
     out = tmp_path / "output"
@@ -71,11 +71,11 @@ def test_closure_generates_all_forms(retro_config, output_dir):
 
 
 def test_generate_all_reports_bad_config(tmp_path, capsys):
-    bad = tmp_path / "config.yml"
-    bad.write_text("phase: new\nstudy: {}\npi: {}\n", encoding="utf-8")
+    bad = tmp_path / "config.toml"
+    bad.write_text('phase = "new"\n[study]\n[pi]\n', encoding="utf-8")
     assert generate_all.main(str(bad), str(tmp_path / "out")) == 2
     assert "study.title_zh" in capsys.readouterr().out
-    assert generate_all.main(str(tmp_path / "missing.yml"), str(tmp_path / "out")) == 2
+    assert generate_all.main(str(tmp_path / "missing.toml"), str(tmp_path / "out")) == 2
 
 
 def test_docx_contains_irb_number(retro_config, output_dir):
@@ -112,7 +112,7 @@ def test_checklist_generation(retro_config, tmp_path):
 
 def test_config_validation():
     """Verify config loads without error."""
-    config = load_config("tests/fixtures/sample_retrospective.yml")
+    config = load_config("examples/gcsf-retrospective/config.toml")
     assert config["study"]["irb_no"] == "20250801A"
     assert config["pi"]["name"] == "林協霆"
     assert config["subjects"]["consent_waiver"] is True
@@ -124,13 +124,13 @@ def test_proposal_summary_uses_config_text(output_dir):
     """proposal.* text fills 中文計畫摘要; absent keys keep the placeholder."""
     from scripts.generators.proposal import generate_proposal_summary
 
-    config = load_config("tests/fixtures/example_tdxd_her2low.yml")
+    config = load_config("examples/tdxd-her2low/config.toml")
     text = "\n".join(p.text for p in Document(
         generate_proposal_summary(config, output_dir)).paragraphs)
     assert "DESTINY-Breast04" in text
     assert "1. 主要目的" in text
     assert "（請列出）" not in text
-    assert "標準。疾病" in text  # folded-line spaces removed
+    assert "標準。疾病" in text  # wrapped Markdown lines joined without spaces
 
     config.pop("proposal")
     text = "\n".join(p.text for p in Document(

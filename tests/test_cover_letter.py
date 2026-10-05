@@ -5,13 +5,13 @@ import sys
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from scripts.config import load_config
 from scripts.cover_letter import PHASE_BODIES, generate_cover_letter
-from scripts.docx_utils import load_config
 from scripts.form_selector import PHASE_FORMS, select_forms
 
 
 def _letter(phase, tmp_path, **overrides):
-    config = load_config("tests/fixtures/sample_retrospective.yml")
+    config = load_config("examples/gcsf-retrospective/config.toml")
     config["phase"] = phase
     for key, value in overrides.items():
         config["study"][key] = value

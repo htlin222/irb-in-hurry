@@ -1,0 +1,8 @@
+# Study team (referenced from config.toml).
+
+[pi]
+name    = "林協霆"
+name_en = "Hsieh-Ting Lin"
+dept    = "血液腫瘤內科／專任主治醫師"
+phone   = "0920476278（院內分機1640）"
+email   = "htlin222@kfsyscc.org"

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Main orchestrator: load config → select forms → generate all → update checklist.
 
-Usage: uv run python scripts/generate_all.py [config.yml] [--output DIR] [--phase PHASE]
+Usage: uv run python scripts/generate_all.py [config.toml] [--output DIR] [--phase PHASE]
+
+--phase (or the PHASE environment variable) overrides `phase` for one run
+without editing config.toml.
 """
 import argparse
 import glob
@@ -29,24 +32,27 @@ def generate_form(form_id, config, output_dir):
     return path
 
 
-def main(config_path="config.yml", output_dir="output", phase=None, verbose=False,
+def main(config_path="config.toml", output_dir="output", phase=None, verbose=False,
          checklist_path="checklist.md"):
     """Generate all required IRB forms based on config. Returns a process exit code."""
-    try:
-        config = load_config(config_path)
-    except FileNotFoundError:
-        print(f"✗ {config_path} not found — copy a fixture from tests/fixtures/ to start")
+    if not os.path.isfile(config_path):
+        print(f"✗ {config_path} not found — start from an example: make init EXAMPLE=<name>")
         return 2
+    try:
+        config = load_config(config_path, phase)
     except ConfigError as e:
         print(f"✗ {e}")
         return 2
-    if phase:
-        config["phase"] = phase
     os.makedirs(output_dir, exist_ok=True)
+    # output/ is disposable: drop the previous run so a phase switch leaves no
+    # stray forms to be converted, validated and reviewed as if they were current.
+    for pattern in ("*.docx", "*.pdf", "preview/*.png", "preview/compare/*.png"):
+        for f in glob.glob(os.path.join(output_dir, pattern)):
+            os.remove(f)
 
     phase = config["phase"]
     phase_zh = PHASE_NAMES.get(phase, phase)
-    irb_no = config["study"]["irb_no"] or "（尚未取得）"
+    irb_no = config["study"]["irb_no"] or "（待核發）"
 
     print("╔══════════════════════════════════════════════╗")
     print("║  IRB-in-Hurry Form Generator                 ║")
@@ -85,15 +91,6 @@ def main(config_path="config.yml", output_dir="output", phase=None, verbose=Fals
 
     generate_checklist(config, results, phase_zh, checklist_path, letter_path=letter_path)
 
-    # Forms left over from an earlier run (e.g. another phase) would otherwise
-    # be converted, validated and reviewed as if they belonged to this one.
-    fresh = {os.path.abspath(p) for _, _, p, _ in results if p}
-    stale = sorted(os.path.basename(p) for p in glob.glob(os.path.join(output_dir, "*.docx"))
-                   if os.path.abspath(p) not in fresh)
-    if stale:
-        print(f"\n⚠ {len(stale)} DOCX in {output_dir}/ not produced by this run (run `make clean` to drop):")
-        for name in stale:
-            print(f"    {name}")
     print(f"\n■ Checklist written to {checklist_path}")
 
     generated = sum(1 for *_, s in results if s == "generated")
@@ -109,10 +106,11 @@ def main(config_path="config.yml", output_dir="output", phase=None, verbose=Fals
 
 
 def parse_args(argv=None):
-    parser = argparse.ArgumentParser(description="Generate KFSYSCC IRB forms from config.yml")
-    parser.add_argument("config", nargs="?", default="config.yml", help="study config (default: config.yml)")
+    parser = argparse.ArgumentParser(description="Generate KFSYSCC IRB forms from config.toml")
+    parser.add_argument("config", nargs="?", default="config.toml", help="study config (default: config.toml)")
     parser.add_argument("-o", "--output", default="output", help="output directory (default: output)")
-    parser.add_argument("--phase", choices=list(PHASE_FORMS), help="override `phase` from the config")
+    parser.add_argument("--phase", choices=list(PHASE_FORMS), default=os.environ.get("PHASE") or None,
+                        help="override `phase` from the config without editing it (default: $PHASE)")
     parser.add_argument("-v", "--verbose", action="store_true", help="print tracebacks for failed forms")
     return parser.parse_args(argv)
 

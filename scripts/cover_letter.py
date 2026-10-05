@@ -1,7 +1,7 @@
 """Draft cover letter (致人體試驗委員會函稿) for each submission phase.
 
 Writes a polite, formal Chinese letter that can be pasted into the email to
-irb@kfsyscc.org or printed as 送審函. Study facts come from config.yml; anything
+irb@kfsyscc.org or printed as 送審函. Study facts come from config.toml; anything
 the config does not hold is left as a 【請填寫：…】 placeholder so the PI can
 see exactly what still needs their words.
 """

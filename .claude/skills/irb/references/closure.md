@@ -43,18 +43,21 @@ Data and Safety Monitoring Plan report. Always included with closure.
 
 ## Closure-Specific Config
 
-```yaml
-closure:
-  extensions: 0                    # How many times the study was extended
-  amendments: 0                    # Number of protocol amendments
-  sae_count: 0                     # Total SAEs during study
-  specimens: false                 # Were biological specimens collected?
-  data_safety:
-    deidentified: true             # Is stored data de-identified?
-    encrypted: true                # Is stored data encrypted?
-    retention_years: 7             # Years to retain after closure
-    authorized_personnel: "PI name" # Who has data access
+```toml
+[closure]
+extensions = 0                     # How many times the study was extended
+amendments = 0                     # Number of protocol amendments
+sae_count  = 0                     # Total SAEs during study
+specimens  = false                 # Were biological specimens collected?
+
+[closure.data_safety]
+deidentified         = true        # Is stored data de-identified?
+encrypted            = true        # Is stored data encrypted?
+retention_years      = 7           # Years to retain after closure
+authorized_personnel = "PI name"   # Who has data access
 ```
+
+Generate with `make closure` (= `make all PHASE=closure`); `config.toml` is not edited.
 
 ## Retrospective Study Closure
 
