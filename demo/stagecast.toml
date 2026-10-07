@@ -161,7 +161,7 @@ id     = "18"
 name   = "Part 4 · 結案文件"
 prompt = "prompts/18.md"
 stall  = "20m"
-verify = "../check answered 18 && ls output/*SF036*"
+verify = "../check answered 18 && ls output/*SF036* output/*/*SF036* 2>/dev/null | grep -q ."
 note   = "檢查：結案送審資料表 SF036 產出。"
 
 [[stage]]
