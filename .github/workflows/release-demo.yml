@@ -21,9 +21,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: demo-submissions-2026-10-07
         run: |
+          # GitHub rewrites any other character in an asset name to "." (結案 → .),
+          # so keep zip names ASCII and put the Chinese labels in NOTES.md.
+          bad=$(ls demo/release/*.zip | xargs -n1 basename | grep -v '^[A-Za-z0-9._-]*$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::Release asset names must be ASCII [A-Za-z0-9._-]: $bad"; exit 1
+          fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" demo/release/*.zip --clobber
             gh release edit "$TAG" --notes-file demo/release/NOTES.md
+            # Drop assets no longer in demo/release/ (e.g. renamed zips).
+            keep=$(ls demo/release/*.zip | xargs -n1 basename)
+            gh release view "$TAG" --json assets --jq '.assets[].name' | while read -r name; do
+              grep -qxF "$name" <<<"$keep" || gh release delete-asset "$TAG" "$name" --yes
+            done
           else
             gh release create "$TAG" demo/release/*.zip --target "$GITHUB_SHA" --prerelease \
               --title "示範送審文件：新案、複審、結案（T-DXd 範例）" --notes-file demo/release/NOTES.md
