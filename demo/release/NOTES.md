@@ -2,9 +2,9 @@
 
 | 檔案 | 來源 | 內容 |
 |---|---|---|
-| `01_新案送審_first-submission.zip` | tag `first-submission` | SF001、SF002、SF003、SF005、SF094、中文計畫摘要 |
-| `02_複審_second-submission.zip` | tag `second-submission` | SF019 複審案申請表（逐條回覆 3 項審查意見）＋ `修正後文件_revised/`（依意見修正後的新案文件） |
-| `03_結案_草稿_closure-draft.zip` | 錄影結束時的狀態（保存年限改回 7 年） | SF023、SF036、SF037、SF038 |
+| 新案送審 `01_first-submission.zip` | tag `first-submission` | SF001、SF002、SF003、SF005、SF094、中文計畫摘要 |
+| 複審 `02_second-submission.zip` | tag `second-submission` | SF019 複審案申請表（逐條回覆 3 項審查意見）＋ `修正後文件_revised/`（依意見修正後的新案文件） |
+| 結案（草稿）`03_closure-draft.zip` | 錄影結束時的狀態（保存年限改回 7 年） | SF023、SF036、SF037、SF038 |
 
 每包都附 DOCX 和 PDF：送審以 PDF 為準（字型已內嵌），DOCX 留著備改。
 
