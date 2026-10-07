@@ -5,7 +5,12 @@ Most chapters are questions with no artefact, so "the turn that received this
 exact prompt has ended" is the honest completion signal for them. Chapters that
 produce something also check the artefact (see ./check).
 """
-import json, os, pathlib, subprocess, sys, time
+import json
+import os
+import pathlib
+import subprocess
+import sys
+import time
 
 state = pathlib.Path(os.environ["STAGECAST_STATE"])
 prompts = pathlib.Path(os.environ["STAGECAST_PROMPTS"])
