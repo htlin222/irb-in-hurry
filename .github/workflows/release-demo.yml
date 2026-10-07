@@ -1,0 +1,30 @@
+name: Demo release
+
+# Publishes demo/release/*.zip (the submission packages from the recorded demo)
+# as a GitHub release, with demo/release/NOTES.md as its description.
+
+on:
+  push:
+    branches: [main]
+    paths: ["demo/release/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: demo-submissions-2026-10-07
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" demo/release/*.zip --clobber
+            gh release edit "$TAG" --notes-file demo/release/NOTES.md
+          else
+            gh release create "$TAG" demo/release/*.zip --target "$GITHUB_SHA" --prerelease \
+              --title "示範送審文件：新案、複審、結案（T-DXd 範例）" --notes-file demo/release/NOTES.md
+          fi

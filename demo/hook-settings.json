@@ -1,0 +1,2 @@
+{ "hooks": { "Stop": [ { "matcher": "", "hooks": [
+  { "type": "command", "command": "python3 \"$STAGECAST_HOME/turn_ended.py\"", "timeout": 20 } ] } ] } }

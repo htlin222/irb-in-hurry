@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Chapter checks, run from the worker's directory (the irb-in-hurry clone).
+#   check answered ID       the turn that received prompt ID has ended
+#   check edited ID PREV    …and the study's source files differ from when PREV ended
+#   check fp                fingerprint of the study's source files
+S="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.stagecast"
+fp() { cat config.toml cv.toml 中文計畫摘要.md 2>/dev/null | cksum | cut -d' ' -f1; }
+case "$1" in
+  fp)       fp ;;
+  answered) test -f "$S/answered/$2" ;;
+  edited)   test -f "$S/answered/$2" && [ "$(fp)" != "$(cat "$S/fp-$3" 2>/dev/null)" ] ;;
+  *) exit 2 ;;
+esac

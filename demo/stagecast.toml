@@ -1,0 +1,201 @@
+# IRB-in-Hurry 示範腳本（PROMPTS.md Part 1–4），一個 prompt 一章。
+# 完成訊號：Stop hook 記錄「收到這一題的那一輪已結束」，有產物的章節另外檢查產物。
+
+[project]
+name    = "IRB-in-Hurry"
+title   = "醫師的 Agentic Workflow：從新案到結案"
+blurb   = "PROMPTS.md Part 1–4，21 個 prompt，一字不改送進 Claude Code，完整錄下"
+workdir = "irb-in-hurry"
+repo    = "https://github.com/htlin222/irb-in-hurry"
+facts = [
+  { value = "21", label = "prompts" },
+  { value = "2",  label = "次送審" },
+  { value = "1",  label = "個結案" },
+]
+
+[recording]
+cols       = 118
+rows       = 28
+agent      = "bash ../agent.sh"
+idle_limit = 2
+socket     = "stagecast-irb"
+
+[[stage]]
+id     = "01"
+name   = "Part 1 · 三句話"
+prompt = "prompts/01.md"
+stall  = "20m"
+verify = "../check answered 01"
+note   = "這個專案在做什麼。"
+
+[[stage]]
+id     = "02"
+name   = "Part 1 · 畫一張圖"
+prompt = "prompts/02.md"
+stall  = "20m"
+verify = "../check answered 02"
+note   = "從填資料到送審文件的流程。"
+
+[[stage]]
+id     = "03"
+name   = "Part 1 · 醫師只改哪幾個檔"
+prompt = "prompts/03.md"
+stall  = "20m"
+verify = "../check answered 03"
+note   = "config.toml、cv.toml、中文計畫摘要.md。"
+
+[[stage]]
+id     = "04"
+name   = "Part 2 · 練習用分支"
+prompt = "prompts/04.md"
+stall  = "20m"
+verify = "../check answered 04 && [ \"$(git branch --show-current)\" != main ]"
+note   = "檢查：目前不在 main 上。"
+
+[[stage]]
+id     = "05"
+name   = "Part 2 · T-DXd 新案送審"
+prompt = "prompts/05.md"
+stall  = "20m"
+verify = "../check answered 05 && grep -qE '^planned_n *= *220' config.toml && ls output/*SF001*.pdf"
+note   = "檢查：config 換成 T-DXd 範例，且產出 PDF。"
+
+[[stage]]
+id     = "06"
+name   = "Part 2 · 看一張表單"
+prompt = "prompts/06.md"
+stall  = "20m"
+verify = "../check answered 06"
+note   = ""
+
+[[stage]]
+id     = "07"
+name   = "Part 2 · 存成「第一次送審」"
+prompt = "prompts/07.md"
+stall  = "20m"
+verify = "../check answered 07 && { [ -n \"$(git tag)\" ] || git log --format=%s | grep -q '第一次'; }"
+note   = "檢查：git 裡真的有這個版本。"
+
+[[stage]]
+id     = "08"
+name   = "Part 3 · 樣本數 220 的依據"
+prompt = "prompts/08.md"
+stall  = "20m"
+verify = "../check edited 08 07"
+note   = "檢查：計畫檔真的被改了。"
+
+[[stage]]
+id     = "09"
+name   = "Part 3 · 傾向分數的變項"
+prompt = "prompts/09.md"
+stall  = "20m"
+verify = "../check edited 09 08"
+note   = "檢查：計畫檔真的被改了。"
+
+[[stage]]
+id     = "10"
+name   = "Part 3 · 保存年限改 10 年"
+prompt = "prompts/10.md"
+stall  = "20m"
+verify = "../check answered 10 && grep -qE '^retention_years *= *10' config.toml"
+note   = "檢查：config 裡是 10。"
+
+[[stage]]
+id     = "11"
+name   = "Part 3 · 全部都更新了嗎"
+prompt = "prompts/11.md"
+stall  = "20m"
+verify = "../check answered 11"
+note   = ""
+
+[[stage]]
+id     = "12"
+name   = "Part 3 · 改了哪些地方"
+prompt = "prompts/12.md"
+stall  = "20m"
+verify = "../check answered 12"
+note   = ""
+
+[[stage]]
+id     = "13"
+name   = "Part 3 · 審查意見回覆表"
+prompt = "prompts/13.md"
+stall  = "20m"
+verify = "../check answered 13"
+note   = ""
+
+[[stage]]
+id     = "14"
+name   = "Part 3 · 複審表單＋「第二次送審」"
+prompt = "prompts/14.md"
+stall  = "20m"
+verify = "../check answered 14 && ls output/*SF019* && { [ $(git tag | wc -l) -ge 2 ] || git log --format=%s | grep -q '第二次'; }"
+note   = "檢查：SF019 產出，且有第二個版本。"
+
+[[stage]]
+id     = "15"
+name   = "Part 3 · 保存年限改回 7 年"
+prompt = "prompts/15.md"
+stall  = "20m"
+verify = "../check answered 15 && grep -qE '^retention_years *= *7' config.toml"
+note   = "檢查：config 裡回到 7。"
+
+[[stage]]
+id     = "16"
+name   = "Part 3 · 找回第一次送審"
+prompt = "prompts/16.md"
+stall  = "20m"
+verify = "../check answered 16"
+note   = ""
+
+[[stage]]
+id     = "17"
+name   = "Part 3 · 假裝是審查委員"
+prompt = "prompts/17.md"
+stall  = "20m"
+verify = "../check answered 17"
+note   = ""
+
+[[stage]]
+id     = "18"
+name   = "Part 4 · 結案文件"
+prompt = "prompts/18.md"
+stall  = "20m"
+verify = "../check answered 18 && ls output/*SF036* output/*/*SF036* 2>/dev/null | grep -q ."
+note   = "檢查：結案送審資料表 SF036 產出。"
+
+[[stage]]
+id     = "19"
+name   = "Part 4 · /irb brainstorm"
+prompt = "prompts/19.md"
+stall  = "20m"
+verify = "../check answered 19"
+note   = ""
+
+[[stage]]
+id     = "20"
+name   = "Part 4 · 誰在判斷、誰是固定程式"
+prompt = "prompts/20.md"
+stall  = "20m"
+verify = "../check answered 20"
+note   = ""
+
+[[stage]]
+id     = "21"
+name   = "Part 4 · 第一步該做什麼"
+prompt = "prompts/21.md"
+stall  = "20m"
+verify = "../check answered 21"
+note   = ""
+
+[site]
+min_chapter_seconds = 8
+emphasise = ["請照意見修改", "第一次送審", "第二次送審", "審查委員"]
+about = """
+<p>畫面上看到的，就是一個人會打的字：PROMPTS.md 的 Part 1–4，一題一章，原文送出。
+沒有人坐在終端機前三小時，所以由另一個程式依序貼上每個 prompt，
+等到<b>那一輪真的結束、而且該有的產物真的存在</b>（分支、PDF、版本標記、config 數值）才進下一章。
+它只負責打字，不做判斷。</p>
+<p>21 章是同一段對話，所以「跟第一次送審比」問的就是前面那次送審。</p>
+<p>錄製工具：<a href="https://github.com/htlin222/stagecast">stagecast</a>。</p>
+"""

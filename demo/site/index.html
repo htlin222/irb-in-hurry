@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IRB-in-Hurry — 醫師的 Agentic Workflow：從新案到結案</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.css">
+<style>
+  :root {
+    --ink: #1c1917; --muted: #57534e; --faint: #8c8681;
+    --line: #e7e5e4; --bg: #ffffff; --card: #ffffff;
+    --sans: ui-sans-serif, -apple-system, "Segoe UI", system-ui, "PingFang TC", "Noto Sans TC", sans-serif;
+    --mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 15px/1.6 var(--sans); }
+  ::backdrop { background: #fff; }
+  #app { display: grid; grid-template-rows: auto 1fr; height: 100vh; background: var(--bg); }
+  header { display: flex; align-items: center; gap: 24px; min-height: 60px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; font-weight: 600; margin: 0; white-space: nowrap; }
+  header .blurb { color: var(--muted); flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header .facts { display: flex; gap: 18px; }
+  header .facts div { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+  header .facts b { font-size: 15px; }
+  header .facts span { font-size: 12px; color: var(--faint); }
+  header nav { display: flex; gap: 14px; font-size: 13px; white-space: nowrap; }
+  header nav a { color: var(--muted); text-decoration: none; cursor: pointer; }
+  header nav a:hover { color: var(--ink); }
+  main { display: grid; grid-template-columns: 248px 1fr; min-height: 0; }
+  #rail { border-right: 1px solid var(--line); overflow-y: auto; padding: 8px 0; }
+  #rail button { display: grid; grid-template-columns: 28px 1fr auto; gap: 4px; width: 100%; text-align: left;
+    background: none; border: 0; padding: 7px 14px; font: 13px/1.45 var(--sans); color: var(--muted); cursor: pointer; }
+  #rail button .n, #rail button .t { color: var(--faint); font-variant-numeric: tabular-nums; }
+  #rail button:hover { color: var(--ink); }
+  #rail button[aria-current="true"] { color: var(--ink); font-weight: 600; background: #fafaf9; }
+  #stage { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
+  #screen { position: relative; min-height: 0; background: var(--bg); }
+  #player { position: absolute; inset: 0; }
+  #player .ap-wrapper, #player .ap-player { background: #fff; }
+  .overlay { position: absolute; inset: 0; z-index: 20; background: var(--card); overflow-y: auto; }
+  .hidden { display: none !important; }
+  #brief { display: flex; flex-direction: column; justify-content: center; padding: 40px 56px; }
+  #brief .label { font-size: 12px; color: var(--faint); letter-spacing: .08em; margin-bottom: 14px; }
+  #brieftext { font-size: 21px; line-height: 1.95; max-width: 62ch; white-space: pre-wrap; margin: 0 0 32px; }
+  #brieftext b { font-weight: 700; }
+  .btn { font: 600 13px var(--sans); letter-spacing: .14em; color: #fff; background: var(--ink); border: 0;
+    padding: 11px 22px; border-radius: 4px; cursor: pointer; align-self: flex-start; }
+  .sheet { position: absolute; inset: 0; z-index: 30; background: var(--card); padding: 40px 56px; overflow-y: auto; display: none; }
+  .sheet.open { display: block; }
+  .sheet .close { position: absolute; top: 14px; right: 18px; background: none; border: 1px solid var(--line);
+    border-radius: 4px; font: 13px var(--sans); color: var(--muted); padding: 4px 10px; cursor: pointer; }
+  #prompttext { font-size: 21px; line-height: 1.95; max-width: 62ch; white-space: pre-wrap; }
+  #sheet-about .body { max-width: 62ch; }
+  #sheet-about a { color: var(--ink); }
+  footer { display: flex; align-items: center; gap: 16px; padding: 8px 20px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  footer .note { flex: 1; min-width: 0; }
+  footer .hint { font-size: 12px; color: var(--faint); white-space: nowrap; }
+  footer button { background: none; border: 1px solid var(--line); border-radius: 4px; font: 13px var(--sans);
+    color: var(--ink); padding: 4px 10px; cursor: pointer; white-space: nowrap; }
+  kbd { font: 11px var(--mono); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+  @media (max-width: 1100px) { header .facts { display: none; } }
+  @media (max-width: 760px) {
+    header .blurb, footer .hint { display: none; }
+    main { grid-template-columns: 150px 1fr; }
+    #brief, .sheet { padding: 24px 16px; }
+    #brieftext, #prompttext { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>IRB-in-Hurry</h1>
+    <div class="blurb">PROMPTS.md Part 1–4，21 個 prompt，一字不改送進 Claude Code，完整錄下</div>
+    <div class="facts"><div><b>21</b><span>prompts</span></div><div><b>2</b><span>次送審</span></div><div><b>1</b><span>個結案</span></div></div>
+    <nav><a id="about-link">關於</a><a href="https://github.com/htlin222/irb-in-hurry">原始碼</a></nav>
+  </header>
+  <main>
+    <div id="rail" role="list"></div>
+    <div id="stage">
+      <div id="screen">
+        <div id="player"></div>
+        <div id="brief" class="overlay">
+          <div class="label" id="brieflabel"></div>
+          <div id="brieftext"></div>
+          <button class="btn" id="btn-start">START</button>
+        </div>
+        <div id="sheet-prompt" class="sheet">
+          <button class="close" id="close-prompt">關閉</button>
+          <div class="label" style="font-size:12px;color:var(--faint);margin-bottom:14px">送出的訊息</div>
+          <div id="prompttext"></div>
+        </div>
+        <div id="sheet-about" class="sheet">
+          <button class="close" id="close-about">關閉</button>
+          <div class="body"><p>畫面上看到的，就是一個人會打的字：PROMPTS.md 的 Part 1–4，一題一章，原文送出。
+沒有人坐在終端機前三小時，所以由另一個程式依序貼上每個 prompt，
+等到<b>那一輪真的結束、而且該有的產物真的存在</b>（分支、PDF、版本標記、config 數值）才進下一章。
+它只負責打字，不做判斷。</p>
+<p>21 章是同一段對話，所以「跟第一次送審比」問的就是前面那次送審。</p>
+<p>錄製工具：<a href="https://github.com/htlin222/stagecast">stagecast</a>。</p>
+</div>
+        </div>
+      </div>
+      <footer>
+        <span class="note" id="note"></span>
+        <button id="btn-prompt">訊息</button>
+        <span class="hint"><kbd>[</kbd> <kbd>]</kbd> 章節 · <kbd>m</kbd> 訊息 · <kbd>Esc</kbd> 關閉</span>
+      </footer>
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.17.0/dist/bundle/asciinema-player.min.js"></script>
+<script>
+var STAGES = [
+ {
+  "id": "01",
+  "t": 15,
+  "name": "Part 1 · 三句話",
+  "note": "這個專案在做什麼。"
+ },
+ {
+  "id": "02",
+  "t": 18,
+  "name": "Part 1 · 畫一張圖",
+  "note": "從填資料到送審文件的流程。"
+ },
+ {
+  "id": "03",
+  "t": 16,
+  "name": "Part 1 · 醫師只改哪幾個檔",
+  "note": "config.toml、cv.toml、中文計畫摘要.md。"
+ },
+ {
+  "id": "04",
+  "t": 16,
+  "name": "Part 2 · 練習用分支",
+  "note": "檢查：目前不在 main 上。"
+ },
+ {
+  "id": "05",
+  "t": 86,
+  "name": "Part 2 · T-DXd 新案送審",
+  "note": "檢查：config 換成 T-DXd 範例，且產出 PDF。"
+ },
+ {
+  "id": "06",
+  "t": 22,
+  "name": "Part 2 · 看一張表單",
+  "note": ""
+ },
+ {
+  "id": "07",
+  "t": 21,
+  "name": "Part 2 · 存成「第一次送審」",
+  "note": "檢查：git 裡真的有這個版本。"
+ },
+ {
+  "id": "08",
+  "t": 56,
+  "name": "Part 3 · 樣本數 220 的依據",
+  "note": "檢查：計畫檔真的被改了。"
+ },
+ {
+  "id": "09",
+  "t": 46,
+  "name": "Part 3 · 傾向分數的變項",
+  "note": "檢查：計畫檔真的被改了。"
+ },
+ {
+  "id": "10",
+  "t": 57,
+  "name": "Part 3 · 保存年限改 10 年",
+  "note": "檢查：config 裡是 10。"
+ },
+ {
+  "id": "11",
+  "t": 25,
+  "name": "Part 3 · 全部都更新了嗎",
+  "note": ""
+ },
+ {
+  "id": "12",
+  "t": 20,
+  "name": "Part 3 · 改了哪些地方",
+  "note": ""
+ },
+ {
+  "id": "13",
+  "t": 69,
+  "name": "Part 3 · 審查意見回覆表",
+  "note": ""
+ },
+ {
+  "id": "14",
+  "t": 66,
+  "name": "Part 3 · 複審表單＋「第二次送審」",
+  "note": "檢查：SF019 產出，且有第二個版本。"
+ },
+ {
+  "id": "15",
+  "t": 52,
+  "name": "Part 3 · 保存年限改回 7 年",
+  "note": "檢查：config 裡回到 7。"
+ },
+ {
+  "id": "16",
+  "t": 17,
+  "name": "Part 3 · 找回第一次送審",
+  "note": ""
+ },
+ {
+  "id": "17",
+  "t": 63,
+  "name": "Part 3 · 假裝是審查委員",
+  "note": ""
+ },
+ {
+  "id": "18",
+  "t": 53,
+  "name": "Part 4 · 結案文件",
+  "note": "檢查：結案送審資料表 SF036 產出。"
+ },
+ {
+  "id": "19",
+  "t": 36,
+  "name": "Part 4 · /irb brainstorm",
+  "note": ""
+ },
+ {
+  "id": "20",
+  "t": 28,
+  "name": "Part 4 · 誰在判斷、誰是固定程式",
+  "note": ""
+ },
+ {
+  "id": "21",
+  "t": 25,
+  "name": "Part 4 · 第一步該做什麼",
+  "note": ""
+ }
+];
+var KEYS = ["請照意見修改", "第一次送審", "第二次送審", "審查委員"];
+var PROMPTS = {};
+var cur = -1, player = null;
+var $ = function (id) { return document.getElementById(id); };
+var THEME = { foreground: "#1c1917", background: "#ffffff",
+  palette: "#1c1917:#cf222e:#1a7f37:#9a6700:#0969da:#8250df:#1b7c83:#57534e:#57534e:#cf222e:#1a7f37:#9a6700:#0969da:#8250df:#1b7c83:#8c8681" };
+
+function esc(s) { return s.replace(/[&<>]/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c]; }); }
+function emphasise(s) {
+  var h = esc(s);
+  KEYS.forEach(function (k) { if (k) h = h.split(esc(k)).join("<b>" + esc(k) + "</b>"); });
+  return h;
+}
+function mmss(t) { return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); }
+
+function rail() {
+  STAGES.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.innerHTML = '<span class="n">' + s.id + '</span><span>' + esc(s.name) + '</span><span class="t">' + mmss(s.t) + '</span>';
+    b.onclick = function () { go(i); };
+    $("rail").appendChild(b);
+  });
+}
+
+function go(i) {
+  if (i < 0 || i >= STAGES.length) return;
+  cur = i;
+  var s = STAGES[i];
+  document.querySelectorAll("#rail button").forEach(function (b, j) {
+    b.setAttribute("aria-current", j === i ? "true" : "false");
+  });
+  var p = PROMPTS[s.id] || "";
+  $("brieflabel").textContent = s.id + " · " + s.name;
+  $("brieftext").innerHTML = emphasise(p);
+  $("prompttext").innerHTML = emphasise(p);
+  $("note").textContent = s.note || "";
+  $("brief").classList.remove("hidden");
+  closeSheets();
+  if (player) { try { player.dispose(); } catch (e) {} }
+  $("player").innerHTML = "";
+  player = AsciinemaPlayer.create("casts/stage-" + s.id + ".cast", $("player"), {
+    fit: "both", idleTimeLimit: 2, theme: "stagecast", terminalFontFamily: "var(--mono)", preload: true,
+    poster: "npt:0:1"
+  });
+  history.replaceState(null, "", "#" + s.id);
+}
+
+function start() { $("brief").classList.add("hidden"); if (player) player.play(); }
+function closeSheets() { $("sheet-prompt").classList.remove("open"); $("sheet-about").classList.remove("open"); }
+function open(id) { closeSheets(); $(id).classList.add("open"); }
+
+$("btn-start").onclick = start;
+$("btn-prompt").onclick = function () { open("sheet-prompt"); };
+$("close-prompt").onclick = closeSheets;
+$("about-link").onclick = function () { open("sheet-about"); };
+$("close-about").onclick = closeSheets;
+document.addEventListener("keydown", function (e) {
+  if (e.target.tagName === "INPUT") return;
+  if (e.key === "]") go(cur + 1);
+  else if (e.key === "[") go(cur - 1);
+  else if (e.key === "m") open("sheet-prompt");
+  else if (e.key === "Escape") closeSheets();
+});
+
+// The asciinema player reads custom themes from CSS.
+var css = document.createElement("style");
+var pal = THEME.palette.split(":");
+css.textContent = ".asciinema-player-theme-stagecast{--term-color-foreground:" + THEME.foreground +
+  ";--term-color-background:" + THEME.background + ";" +
+  pal.map(function (c, n) { return "--term-color-" + n + ":" + c; }).join(";") + "}";
+document.head.appendChild(css);
+
+rail();
+fetch("prompts.json").then(function (r) { return r.json(); }).then(function (j) {
+  PROMPTS = j;
+  var h = location.hash.slice(1), i = STAGES.findIndex(function (s) { return s.id === h; });
+  go(i >= 0 ? i : 0);
+});
+</script>
+</body>
+</html>
