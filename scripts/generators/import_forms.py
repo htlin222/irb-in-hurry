@@ -1,4 +1,4 @@
-"""Import review form generators for KFSYSCC IRB.
+"""Import review form generators (KFSYSCC form pack).
 
 Generates SF066, SF067, SF068, SF093 forms from config dict.
 """
@@ -15,6 +15,7 @@ from scripts.docx_utils import (
     add_p,
     apply_tb,
     init_doc,
+    institution,
     set_cell_shading,
 )
 
@@ -28,7 +29,7 @@ def generate_sf066(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "專案進口審查送審資料表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -88,7 +89,7 @@ def generate_sf067(config, output_dir):
     pi = config["pi"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "專案進口申請表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -173,7 +174,7 @@ def generate_sf068(config, output_dir):
     pi = config["pi"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "專案進口受試者同意書", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -259,7 +260,7 @@ def generate_sf093(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "專案進口許可證明", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))

@@ -1,4 +1,4 @@
-"""Amendment review form generators for IRB amendment review (修正案審查) at KFSYSCC.
+"""Amendment review form generators for IRB amendment review (修正案審查) (KFSYSCC form pack).
 
 Generates SF014, SF015, SF016 forms from config dict.
 """
@@ -16,6 +16,7 @@ from scripts.docx_utils import (
     apply_tb,
     check,
     init_doc,
+    institution,
     set_cell_shading,
 )
 
@@ -31,7 +32,7 @@ def generate_sf014(config, output_dir):
     affects_consent = config["amendment"].get("affects_consent", False)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=14,
+    add_p(doc, institution().heading, bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "修正案審查送審資料表", bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -46,7 +47,7 @@ def generate_sf014(config, output_dir):
     # Checklist table: 5 columns
     cols = ["備妥", "藥品/非藥品", "資料項目", "備註", "IRB檢核"]
     items = [
-        (True, "※", "送審文件電子檔", "email至irb@kfsyscc.org"),
+        (True, "※", "送審文件電子檔", f"email至{institution().submission_email}"),
         (True, "※", "送審資料表及文件繳交完成簽收表", ""),
         (True, "※", "修正案申請表（主持人簽名及日期）", "IRB.SF015"),
         (True, "※", "修正前後對照表", "IRB.SF016"),
@@ -99,7 +100,7 @@ def generate_sf015(config, output_dir):
     amendment = config["amendment"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=14,
+    add_p(doc, institution().heading, bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "修正案申請表", bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -179,7 +180,7 @@ def generate_sf016(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=14,
+    add_p(doc, institution().heading, bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "修正前後對照表", bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))

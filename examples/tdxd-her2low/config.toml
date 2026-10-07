@@ -4,6 +4,7 @@
 #
 #   make init EXAMPLE=tdxd-her2low && make all
 
+institution = "kfsyscc"   # institutions/<id>/profile.toml
 phase = "new"
 
 pi       = "@cv.toml#pi"

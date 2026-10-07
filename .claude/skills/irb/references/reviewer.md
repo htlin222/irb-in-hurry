@@ -2,7 +2,7 @@
 
 ## Overview
 
-The simulated reviewer (`scripts/reviewer.py`) applies 7 categories of criteria based on 45 CFR 46.111 and KFSYSCC institutional standards. Run via `make review` after generating forms.
+The simulated reviewer (`scripts/reviewer.py`) applies 7 categories of criteria based on 45 CFR 46.111 and institutional standards (KFSYSCC as reference); submission details come from the active institution profile. Run via `make review` after generating forms.
 
 ## Review Categories
 

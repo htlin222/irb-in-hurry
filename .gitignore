@@ -3,7 +3,8 @@ output/
 checklist.md
 reviewers/
 raw/
-templates/official/
+# official blank forms (make templates / your own blanks)
+templates/
 
 # Python / uv
 __pycache__/

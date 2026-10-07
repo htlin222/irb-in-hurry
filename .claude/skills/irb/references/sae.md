@@ -19,7 +19,7 @@ Cover sheet for SAE submission.
 
 ### SF044 -- 嚴重不良反應事件通報表（本院）
 
-SAE report for events occurring at our site (KFSYSCC).
+SAE report for events occurring at our own site.
 
 - **Config fields**: `study.*`, `pi.*`
 - **Auto-filled**: Header info

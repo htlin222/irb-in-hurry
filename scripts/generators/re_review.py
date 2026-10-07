@@ -1,4 +1,4 @@
-"""Re-review (複審) form generators for KFSYSCC IRB.
+"""Re-review (複審) form generators (KFSYSCC form pack).
 
 Generates SF019 from config dict.
 """
@@ -15,6 +15,7 @@ from scripts.docx_utils import (
     add_p,
     apply_tb,
     init_doc,
+    institution,
     set_cell_shading,
     set_run_font,
 )
@@ -29,7 +30,7 @@ def generate_sf019(config, output_dir):
     doc = init_doc(sz=12)
 
     # Title block
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(0), sb=Pt(12))
     add_p(doc, "複審案申請表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(0), sb=Pt(6))

@@ -1,7 +1,7 @@
 """IRB review criteria checklist.
 
 Based on 45 CFR 46.111 (federal approval criteria) and common
-institutional review patterns from KFSYSCC and Taiwan IRB standards.
+institutional review patterns from Taiwan IRB standards (KFSYSCC as reference).
 """
 
 REVIEW_CRITERIA = {
@@ -79,7 +79,7 @@ REVIEW_CRITERIA = {
             ("financial_disclosure", "Financial disclosure form (SF094) included"),
             ("all_signatures", "All required signature blocks present"),
             ("current_versions", "Form versions are current (2025.03.03 where applicable)"),
-            ("submission_noted", "Submission instructions noted (irb@kfsyscc.org)"),
+            ("submission_noted", "Submission instructions noted (institution submission address)"),
         ],
     },
 }

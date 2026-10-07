@@ -8,6 +8,8 @@ description: Complete reference for config.toml, its @file references, and every
 All study data lives in plain text with `config.toml` as the entry point; nothing is
 hardcoded. `make check` (`scripts/config.py`) resolves references, validates required
 fields and prints a summary; `--json` prints the fully resolved config.
+Institution facts (committee name, IRB-number label, submission address, page,
+font) are **not** config: they live in `institutions/<id>/profile.toml`.
 
 ## File references (`@`)
 
@@ -33,9 +35,19 @@ Required (validated): `phase`, `study.title_zh`, `study.title_en`, `study.type`,
 `study.review_type`, `pi.name`, `pi.dept`, `dates.study_start`, `dates.study_end`,
 `subjects.planned_n`.
 
+## `institution`
+
+| Field | Type | Description | Example |
+|---|---|---|---|
+| `institution` | string | Folder under `institutions/` whose profile + form pack to use (default `kfsyscc`; `IRB_INSTITUTION` env overrides). Top-level key, before the first `[table]`. | `"kfsyscc"` |
+
+When onboarding a new institution needs a field that isn't listed here, add it
+under the matching section below and document it in this file.
+
 ## `phase` (required)
 
 One of: `new`, `amendment`, `re_review`, `continuing`, `closure`, `sae`, `ib_update`, `import`, `suspension`, `appeal`
+(limited to the phases the institution's form pack routes).
 
 Top-level key (must appear before the first `[table]`). Override per run without editing
 the file: `make closure`, `make all PHASE=closure`, or `generate_all.py --phase closure`.
@@ -45,7 +57,8 @@ the value on the `phase =` line, keeping its comment and the rest of the file.
 ## Validation
 
 `scripts/config.py` validates the resolved config on load and lists every problem at
-once: missing required fields, unknown `phase` / `study.type` / `study.review_type`,
+once: missing required fields, an unknown `institution`, a `phase` the institution's form
+pack doesn't route, unknown `study.type` / `study.review_type`,
 sections of the wrong shape (e.g. `pi` resolving to text instead of a table), co-PIs
 without a `name`, and quoted booleans (`"false"` is a non-empty string and would count
 as true — write `false`). Optional sections (`co_pi`, `closure`, `amendment`,

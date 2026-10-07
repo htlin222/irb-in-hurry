@@ -41,7 +41,7 @@ eval "$FIELDS"
 
 echo ""
 echo -e "${BOLD}╔══════════════════════════════════════════════╗${NC}"
-echo -e "${BOLD}║     ${CYAN}KFSYSCC IRB Submission Dashboard${NC}${BOLD}          ║${NC}"
+echo -e "${BOLD}║     ${CYAN}${INSTITUTION} IRB Submission Dashboard${NC}"
 echo -e "${BOLD}╠══════════════════════════════════════════════╣${NC}"
 echo -e "${BOLD}║${NC} IRB No:     ${GREEN}${IRB_NO:-（待核發）}${NC}"
 echo -e "${BOLD}║${NC} Phase:      ${CYAN}${PHASE_ZH}${NC} (${PHASE})"

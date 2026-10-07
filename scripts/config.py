@@ -28,6 +28,7 @@ CLI:
     python scripts/config.py [config.toml] [--phase X] --shell   # for dashboard.sh
 """
 import argparse
+import importlib
 import json
 import os
 import re
@@ -37,7 +38,8 @@ import tomllib
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from scripts.form_selector import PHASE_FORMS, PHASE_NAMES  # noqa: E402
+from scripts import institution  # noqa: E402
+from scripts.form_selector import PHASE_NAMES  # noqa: E402
 
 # Markdown `## heading` → config key. Unlisted headings are used verbatim.
 SECTION_KEYS = {
@@ -211,9 +213,22 @@ def validate_config(config, source="config.toml"):
         if str(config[section].get(field, "")).strip() == "":
             problems.append(f"`{section}.{field}` is required")
 
+    # Phases are checked against the form pack of the institution this config
+    # selects (IRB_INSTITUTION env > `institution` > default).
+    phases = list(PHASE_NAMES)
+    inst_id = config.get("institution")
+    if inst_id is not None and not (isinstance(inst_id, str) and inst_id.strip()):
+        problems.append(f"`institution` must be a folder name under institutions/ (got {inst_id!r})")
+    else:
+        try:
+            profile = institution.load(institution.resolve_id(config))
+            phases = list(importlib.import_module(profile.forms_module).PHASE_FORMS)
+        except FileNotFoundError as e:
+            problems.append(f"`institution`: {e}")
+
     phase = config.get("phase")
-    if phase not in PHASE_FORMS:
-        problems.append(f"unknown phase: `phase` must be one of {', '.join(PHASE_FORMS)} (got {phase!r})")
+    if phase not in phases:
+        problems.append(f"unknown phase: `phase` must be one of {', '.join(phases)} (got {phase!r})")
 
     study = config["study"]
     for field, allowed in (("type", STUDY_TYPES), ("review_type", REVIEW_TYPES)):
@@ -286,6 +301,7 @@ def main(argv=None):
     elif args.shell:
         s = config["study"]
         for name, val in [
+            ("INSTITUTION", institution.resolve_id(config).upper()),
             ("IRB_NO", s.get("irb_no", "")), ("PHASE", config["phase"]),
             ("PHASE_ZH", PHASE_NAMES[config["phase"]]), ("TITLE", s["title_zh"][:40]),
             ("PI", config["pi"]["name"]), ("STUDY_TYPE", s["type"]),

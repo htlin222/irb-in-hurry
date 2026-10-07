@@ -1,11 +1,31 @@
 ---
 name: irb-form-generator
-description: Automate KFSYSCC IRB document preparation — generates Word docs for all IRB submission phases (new case, amendment, continuing review, closure, SAE, etc.). Use when user mentions IRB, ethics review, human subjects research, form generation, or KFSYSCC. Triggers on study proposals, IRB submissions, or form filling tasks.
+description: Institution-agnostic IRB / ethics-committee paperwork pipeline — turns one config.toml (+ cv.toml / 中文計畫摘要.md) into an institution's official DOCX forms (filled or rebuilt), PDFs, a ■/□ checklist and a Win/Mac layout gate, for every submission phase (new case, amendment, continuing review, closure, SAE, etc.). Ships the KFSYSCC form pack; onboards any other institution from its blank Word forms. Use when user mentions IRB, REC, ethics review, human subjects research, filling official DOCX forms, KFSYSCC, or wants to adapt the pipeline to their own hospital's forms.
 ---
 
 # IRB-in-Hurry Skill
 
-Automated KFSYSCC IRB form generation system. Generates DOCX forms from plain-text sources (`config.toml` + referenced `cv.toml` / `中文計畫摘要.md`), converts to PDF/PNG for visual review.
+Institution-agnostic IRB form pipeline: plain-text study sources (`config.toml` +
+referenced `cv.toml` / `中文計畫摘要.md`) + an **institution profile**
+(`institutions/<id>/`) → official DOCX forms → PDF/PNG → layout gate. KFSYSCC
+(`institutions/kfsyscc/`, 43 forms) is the reference pack.
+
+## Step 0: Which institution?
+
+Before anything else, settle which committee the user is submitting to:
+
+| Situation | Action |
+|---|---|
+| `institution` in `config.toml` matches the user's committee | proceed |
+| Committee has a folder in `institutions/` | set `institution = "<id>"` in `config.toml` |
+| New committee, user has blank forms or a forms URL | follow [onboard-institution.md](references/onboard-institution.md), then return here |
+| Unknown | ask: "Which hospital or committee are you submitting to?" |
+
+Everything institution-specific (committee name, IRB-number label, submission
+email, paper size, margins, font, form list, routing) comes from
+`institutions/<id>/profile.toml` + `forms.py`. **Never hardcode these in scripts
+or generators**: read `institution()` (from `scripts.docx_utils`).
+Method and invariants: `docs/METHODOLOGY.md`.
 
 ## Quick Start
 
@@ -48,7 +68,7 @@ When a user provides a study topic, proposal, or any text:
 7. **Fix findings** -- Address required revisions from reviewer
 8. **Update checklist** -- Track manual steps via `checklist.md`
 
-## Study Type Classification
+## Study Type Classification (generic)
 
 | Study Type | Review Type | Key Config Flags |
 |---|---|---|
@@ -61,7 +81,10 @@ When a user provides a study topic, proposal, or any text:
 
 See [study-types.md](references/study-types.md) for the full decision tree.
 
-## Phase to Forms Mapping
+## Phase to Forms Mapping (KFSYSCC pack)
+
+Phase names are generic; the forms per phase come from the active
+institution's `PHASE_FORMS`. For KFSYSCC:
 
 | Phase | Forms | When |
 |---|---|---|
@@ -76,12 +99,13 @@ See [study-types.md](references/study-types.md) for the full decision tree.
 | suspension | SF047, SF048 | Study pause |
 | appeal | SF077, SF054 | Decision appeal |
 
-The form selector (`scripts/form_selector.py`) automatically adds conditional forms based on study type, review type, and config flags.
+The form selector (`scripts/form_selector.py`) reads the active institution's `forms_module` and adds conditional forms based on study type, review type, and config flags.
 
 ## Config Schema (Key Fields)
 
 ```toml
 # config.toml — "@file" / "@file#key" values are replaced by that file's content
+institution = "kfsyscc"        # institutions/<id>/profile.toml
 phase    = "new"               # new | amendment | continuing | closure | sae | ...
 pi       = "@cv.toml#pi"       # [pi] name, name_en, dept, phone, email
 co_pi    = "@cv.toml#co_pi"    # [[co_pi]] entries (optional)
@@ -121,19 +145,27 @@ All forms use this convention via `docx_utils.check()`.
 ## Project Structure
 
 ```
-config.toml                    # Study metadata (single source of truth)
+config.toml                    # Study metadata (single source of truth) + `institution`
 cv.toml                        # Study team (@cv.toml#pi, @cv.toml#co_pi)
 中文計畫摘要.md                 # Proposal prose (@中文計畫摘要.md)
 examples/                      # Complete example studies (make init EXAMPLE=...)
+institutions/<id>/
+  profile.toml                 # names, labels, submission, page, font, blanks
+  forms.py                     # FORM_REGISTRY + PHASE_FORMS (form pack)
+  form_inventory.md            # (onboarded packs) what each blank contains
+templates/<id>/                # official blank forms (gitignored ground truth)
 scripts/
+  institution.py              # active profile loader
   config.py                   # config.toml loader: @references, Markdown, validation (ConfigError lists every problem)
+  template_fill.py            # generic fill-the-blank generator
+  onboard.py                  # blanks → draft profile/forms/inventory
   docx_utils.py               # Shared DOCX helpers (init_doc, add_p, add_ct, etc.)
   form_selector.py            # Phase + study type -> required forms
   generate_all.py             # Main orchestrator (--phase, --output, --verbose)
   set_phase.py                # Persist phase in config.toml, keeping comments
   checklist.py                # Generates checklist.md with status
   convert.py                  # DOCX -> PDF -> PNG pipeline
-  generators/
+  generators/                 # KFSYSCC rebuild generators (reference pack)
     new_case.py               # SF001, SF002, SF094, SF011, SF022
     closure.py                # SF036, SF037, SF038, SF023
     consent.py                # SF003, SF004, SF005, SF062, SF063, SF075, SF090-092
@@ -152,7 +184,7 @@ checklist.md                   # Auto-generated submission checklist
 dashboard.sh                   # Terminal status dashboard
 ```
 
-## Form Details by Category
+## Form Details by Category (KFSYSCC pack)
 
 - [New Case (新案審查)](references/new-case.md) -- SF001, SF002, SF094, SF003-005
 - [Closure (結案審查)](references/closure.md) -- SF036, SF037, SF038, SF023
@@ -162,7 +194,8 @@ dashboard.sh                   # Terminal status dashboard
 - [Other Categories](references/other-categories.md) -- IB update, import, suspension, appeal
 - [Study Types & Routing](references/study-types.md) -- Classification logic
 - [Config Schema](references/config-schema.md) -- All config.toml fields and `@` references
-- [Brainstorm](references/brainstorm.md) -- Research topic ideas tailored to KFSYSCC + Taiwan epidemiology
+- [Onboard an Institution](references/onboard-institution.md) -- New committee from its blank DOCX forms
+- [Brainstorm](references/brainstorm.md) -- Research topic ideas (KFSYSCC + Taiwan epidemiology example)
 - [Distill: Raw Text → Config](references/distill.md) -- How to extract config from free-form text
 - [Reviewer Criteria](references/reviewer.md) -- Simulated IRB review checklist
 - [Reviewer Guide](references/reviewer-guide.md) -- Rules of thumb, red flags, 45 CFR 46.111 training
@@ -178,22 +211,40 @@ After generating forms:
 
 ## Adding New Generators
 
-Each generator function follows this signature:
+Prefer **filling the official blank** (layout-exact, a few lines per form):
+
+```python
+# institutions/<id>/forms.py
+from scripts.template_fill import blank_generator
+
+generate_f01 = blank_generator("F01", fields={
+    "計畫名稱": "{study.title_zh}",          # label in the blank → config format string
+    "預計收案人數": lambda c: f"{c['subjects']['planned_n']} 人",
+}, checks={
+    "簡易審查": lambda c: c["study"]["review_type"] == "expedited",
+})
+
+FORM_REGISTRY = {"F01": ("新案申請書", "institutions.<id>.forms", "generate_f01")}
+```
+
+Rebuild with python-docx only when a blank can't be filled (text boxes,
+content controls, PDF-only, generated prose):
 
 ```python
 def generate_sfXXX(config: dict, output_dir: str) -> str:
-    """Generate SFXXX form. Returns output file path."""
-    doc = init_doc()
-    # ... build document ...
-    path = os.path.join(output_dir, "SFXXX_中文名稱.docx")
+    doc = init_doc()                                  # profile page setup + font
+    add_p(doc, institution().heading, bold=True)      # never a literal hospital name
+    add_header(doc, config)                           # uses institution().irb_no_label
+    path = os.path.join(output_dir, f"SFXXX_{config['study']['irb_no']}.docx")
     doc.save(path)
     return path
 ```
 
-Register in `FORM_REGISTRY` in `scripts/form_selector.py`, then add to the appropriate phase in `PHASE_FORMS`.
+Register it in the institution's `FORM_REGISTRY`. Module paths are relative to
+`scripts.` unless they start with `institutions.`. Then add it to `PHASE_FORMS`.
 
 ## Submission
 
-- Electronic: email to irb@kfsyscc.org
-- Paper: 1 original + 1 copy to IRB office (B1 administrative building)
-- Signed forms require PI wet signature before submission
+Read it from the profile (`submission:` block). `checklist.md` lists it.
+For KFSYSCC: email irb@kfsyscc.org; 1 original + 1 copy to the IRB office (B1
+administrative building); PI wet signature on signed forms.

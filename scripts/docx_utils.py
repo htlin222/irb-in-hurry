@@ -13,6 +13,7 @@ from docx.oxml.ns import nsdecls, qn
 from docx.shared import Pt, Twips
 
 from scripts.config import load_config  # noqa: F401  (re-exported for older callers)
+from scripts.institution import current
 
 
 def check(condition: bool) -> str:
@@ -20,43 +21,26 @@ def check(condition: bool) -> str:
     return "■" if condition else "□"
 
 
-# Official KFSYSCC blank forms: A4 portrait, L/R 2 cm, T/B 2.5 cm, header 1.5 cm.
-# (python-docx's default template is US Letter with 3.17 cm sides, which shifts
-# every line break and table width relative to the official form.)
-# Values are in twips, copied from the official templates' sectPr.
-PAGE_SETUP = {
-    "page_width": Twips(11906), "page_height": Twips(16838),
-    "left_margin": Twips(1134), "right_margin": Twips(1134),
-    "top_margin": Twips(1418), "bottom_margin": Twips(1418),
-    "header_distance": Twips(851), "footer_distance": Twips(992),
-}
+# Page setup + per-form margins come from the institution profile, copied from
+# the official blanks' sectPr. (python-docx's default template is US Letter
+# with 3.17 cm sides, which shifts every line break and table width.)
+def institution():
+    """Active institution profile (name, committee, labels, page, font)."""
+    return current()
 
-# Forms whose official blank uses other margins: (left, right, top, bottom) twips.
-# Extracted from the official templates (make templates); all others use PAGE_SETUP.
-OFFICIAL_MARGINS = {
-    "PROPOSAL": (1134, 1134, 1134, 1134),
-    "SF002": (1134, 1134, 1418, 1134),
-    "SF023": (1134, 1134, 1418, 1134),
-    "SF031": (1134, 1134, 1418, 1134),
-    "SF032": (1134, 1134, 1418, 567),
-    "SF047": (1134, 1134, 1418, 1134),
-    "SF062": (851, 851, 776, 800),
-    "SF063": (680, 737, 851, 1134),
-    "SF066": (1134, 1134, 1418, 851),
-    "SF067": (1134, 1134, 907, 284),
-    "SF068": (1134, 1134, 907, 1048),
-    "SF075": (680, 737, 851, 1134),
-    "SF079": (1134, 1134, 1418, 1134),
-    "SF080": (1134, 1134, 1418, 1134),
-    "SF082": (1134, 1134, 1418, 851),
-    "SF083": (1134, 1134, 1134, 1418),
-    "SF084": (1134, 1134, 1418, 851),
-    "SF085": (1134, 1134, 1134, 1418),
-    "SF090": (680, 737, 851, 1134),
-    "SF091": (851, 851, 851, 1134),
-    "SF092": (851, 851, 851, 1134),
-    "SF094": (1134, 1134, 1134, 1134),
-}
+
+def _page_setup():
+    pg = current().page
+    m = pg["margins"]
+    return {
+        "page_width": Twips(pg["width"]), "page_height": Twips(pg["height"]),
+        "left_margin": Twips(m["left"]), "right_margin": Twips(m["right"]),
+        "top_margin": Twips(m["top"]), "bottom_margin": Twips(m["bottom"]),
+        "header_distance": Twips(pg.get("header_distance", 851)),
+        "footer_distance": Twips(pg.get("footer_distance", 992)),
+    }
+
+
 _UNSAFE_FILENAME_RE = re.compile(r'[\\/:*?"<>|\s]+')
 
 
@@ -66,81 +50,117 @@ def form_filename(prefix, config, fallback):
     return f"{prefix}_{irb_no or fallback}.docx"
 
 
-_FORM_ID_RE = re.compile(r"SF\s*0*(\d{1,3})")
-
-
 def form_id_from_path(path):
     """'SF002_KF-001.docx' → 'SF002'; '中文計畫摘要_20250801A.docx' → 'PROPOSAL'."""
-    name = os.path.basename(path)
-    m = _FORM_ID_RE.search(name)
-    if m:
-        return f"SF{int(m.group(1)):03d}"
-    return "PROPOSAL" if name.startswith("中文計畫摘要") or "proposal" in name.lower() else None
+    return current().form_id(os.path.basename(path))
 
 
 def official_margins(form_id):
     """(left, right, top, bottom) in twips of the official blank form."""
-    if form_id in OFFICIAL_MARGINS:
-        return OFFICIAL_MARGINS[form_id]
-    return tuple(int(PAGE_SETUP[k].twips) for k in
-                 ("left_margin", "right_margin", "top_margin", "bottom_margin"))
+    pg = current().page
+    if form_id in pg.get("per_form_margins", {}):
+        return tuple(pg["per_form_margins"][form_id])
+    m = pg["margins"]
+    return (m["left"], m["right"], m["top"], m["bottom"])
 
 
 def apply_official_page_setup(path):
     """Re-save a generated DOCX with A4 + the official margins of its form."""
     doc = Document(path)
     left, right, top, bottom = official_margins(form_id_from_path(path))
+    setup = _page_setup()
     for section in doc.sections:
-        section.page_width, section.page_height = PAGE_SETUP["page_width"], PAGE_SETUP["page_height"]
+        section.page_width, section.page_height = setup["page_width"], setup["page_height"]
         section.left_margin, section.right_margin = Twips(left), Twips(right)
         section.top_margin, section.bottom_margin = Twips(top), Twips(bottom)
     doc.save(path)
 
 
-FORM_FONT = '標楷體'
-# fontTable entry Word itself writes for 標楷體. altName lets Word resolve the
-# font by its English name (DFKai-SB on Windows); macOS ships it as BiauKai
-# with the same localized name, so both platforms find the real Kai font.
-_FONT_TABLE_ENTRY = (
+# fontTable entries Word itself writes, for fonts we know. altName lets Word
+# resolve the font by its English name (標楷體 → DFKai-SB on Windows; macOS
+# ships it as BiauKai with the same localized name). Other fonts get a minimal
+# entry with the profile's first alias as altName.
+_KNOWN_FONT_ENTRIES = {"標楷體": (
     '<w:font w:name="標楷體"><w:altName w:val="DFKai-SB"/>'
     '<w:panose1 w:val="03000509000000000000"/><w:charset w:val="88"/>'
     '<w:family w:val="script"/><w:pitch w:val="fixed"/>'
     '<w:sig w:usb0="00000003" w:usb1="080E0000" w:usb2="00000016" w:usb3="00000000"'
     ' w:csb0="00100001" w:csb1="00000000"/></w:font>'
-)
+)}
+
+
+def form_font():
+    return current().font["name"]
+
+
+def _font_table_entry():
+    font = current().font
+    if font["name"] in _KNOWN_FONT_ENTRIES:
+        return _KNOWN_FONT_ENTRIES[font["name"]]
+    alt = font.get("aliases", [])
+    alt_xml = f'<w:altName w:val="{alt[0]}"/>' if alt else ""
+    return f'<w:font w:name="{font["name"]}">{alt_xml}</w:font>'
 
 
 def _apply_cross_platform_defaults(doc):
     """Pin page setup, fonts and language so Word (Win/Mac) and LibreOffice agree."""
     for section in doc.sections:
-        for attr, value in PAGE_SETUP.items():
+        for attr, value in _page_setup().items():
             setattr(section, attr, value)
+    pin_form_font(doc)
 
+
+def _child(parent, tag, first=False):
+    """Find or create a child element (first=True inserts it at the front)."""
+    el = parent.find(qn(tag))
+    if el is None:
+        el = parse_xml(f'<{tag} {nsdecls("w")}/>')
+        parent.insert(0, el) if first else parent.append(el)
+    return el
+
+
+def pin_form_font(doc):
+    """Make the profile's form font the document default (+ fontTable entry)."""
     # docDefaults: replace theme fonts (which resolve to Calibri/MS 明朝 on an
-    # en-US theme) with explicit 標楷體, and tag text as Traditional Chinese.
-    rpr_default = doc.styles.element.find(qn('w:docDefaults')).find(qn('w:rPrDefault')).find(qn('w:rPr'))
-    fonts = rpr_default.find(qn('w:rFonts'))
+    # en-US theme) with the explicit form font, and tag the form language.
+    font = form_font()
+    styles = doc.styles.element
+    rpr_default = _child(_child(_child(styles, 'w:docDefaults', first=True), 'w:rPrDefault'), 'w:rPr')
+    fonts = _child(rpr_default, 'w:rFonts', first=True)
+    for a in ('w:ascii', 'w:hAnsi', 'w:eastAsia', 'w:cs'):
+        fonts.set(qn(a), font)
     for a in ('w:asciiTheme', 'w:hAnsiTheme', 'w:eastAsiaTheme', 'w:cstheme'):
         fonts.attrib.pop(qn(a), None)
-    for a in ('w:ascii', 'w:hAnsi', 'w:eastAsia', 'w:cs'):
-        fonts.set(qn(a), FORM_FONT)
-    lang = rpr_default.find(qn('w:lang'))
-    lang.set(qn('w:eastAsia'), 'zh-TW')
+    _child(rpr_default, 'w:lang').set(qn('w:eastAsia'), current().font.get('lang', 'zh-TW'))
 
     for part in doc.part.package.iter_parts():
-        if str(part.partname) == '/word/fontTable.xml' and FORM_FONT.encode() not in part.blob:
+        if str(part.partname) == '/word/fontTable.xml' and font.encode() not in part.blob:
             part._blob = part.blob.replace(
-                b'</w:fonts>', _FONT_TABLE_ENTRY.encode('utf-8') + b'</w:fonts>')
+                b'</w:fonts>', _font_table_entry().encode('utf-8') + b'</w:fonts>')
+
+
+def strip_theme_fonts(doc):
+    """Resolve theme font references in styles and runs to the form font.
+
+    Official blanks often carry them; they override docDefaults and resolve
+    differently per OS/locale."""
+    font = form_font()
+    for root in (doc.styles.element, doc.element.body):
+        for rf in root.iter(qn('w:rFonts')):
+            for theme, plain in (('w:asciiTheme', 'w:ascii'), ('w:hAnsiTheme', 'w:hAnsi'),
+                                 ('w:eastAsiaTheme', 'w:eastAsia'), ('w:cstheme', 'w:cs')):
+                if rf.attrib.pop(qn(theme), None) is not None:
+                    rf.set(qn(plain), font)
 
 
 def init_doc(sz=12):
-    """Create a new A4 Document with 標楷體 default font."""
+    """Create a new Document with the institution's page setup and form font."""
     doc = Document()
     _apply_cross_platform_defaults(doc)
     s = doc.styles['Normal']
-    s.font.name = FORM_FONT
+    s.font.name = form_font()
     s.font.size = Pt(sz)
-    s.element.rPr.rFonts.set(qn('w:eastAsia'), FORM_FONT)
+    s.element.rPr.rFonts.set(qn('w:eastAsia'), form_font())
     return doc
 
 
@@ -165,8 +185,9 @@ def set_cell_border(cell, **kwargs):
     tcPr.append(tcBorders)
 
 
-def set_run_font(run, font_name="標楷體", size=12, bold=False):
-    """Set run font with eastAsia fallback."""
+def set_run_font(run, font_name=None, size=12, bold=False):
+    """Set run font (default: institution form font) with eastAsia fallback."""
+    font_name = font_name or form_font()
     run.font.name = font_name
     run.font.size = Pt(size)
     run.bold = bold
@@ -181,7 +202,7 @@ def add_p(doc, text, bold=False, size=12, alignment=None, sa=None, sb=None):
     """Add a formatted paragraph to the document."""
     p = doc.add_paragraph()
     run = p.add_run(text)
-    set_run_font(run, "標楷體", size, bold)
+    set_run_font(run, None, size, bold)
     if alignment:
         p.alignment = alignment
     p.paragraph_format.space_after = Pt(6) if sa is None else sa
@@ -194,7 +215,7 @@ def add_ct(cell, text, bold=False, size=10, alignment=None):
     p = cell.paragraphs[0] if cell.paragraphs else cell.add_paragraph()
     p.clear()
     run = p.add_run(text)
-    set_run_font(run, "標楷體", size, bold)
+    set_run_font(run, None, size, bold)
     if alignment:
         p.alignment = alignment
     p.paragraph_format.space_after = Pt(2)
@@ -220,7 +241,7 @@ def add_header(doc, config, inc_proj=True):
     tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
 
     i = 0
-    add_ct(tbl.rows[i].cells[0], "KFSYSCC-IRB編號", True, 11)
+    add_ct(tbl.rows[i].cells[0], current().irb_no_label, True, 11)
     add_ct(tbl.rows[i].cells[1], config["study"]["irb_no"], size=11)
 
     if inc_proj:

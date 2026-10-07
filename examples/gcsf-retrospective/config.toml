@@ -3,6 +3,7 @@
 #
 #   make init EXAMPLE=gcsf-retrospective && make all
 
+institution = "kfsyscc"   # institutions/<id>/profile.toml
 phase = "new"
 
 pi       = "@cv.toml#pi"

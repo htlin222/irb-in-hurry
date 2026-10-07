@@ -1,4 +1,4 @@
-"""Continuing/interim review (期中審查) form generators for KFSYSCC IRB.
+"""Continuing/interim review (期中審查) form generators (KFSYSCC form pack).
 
 Generates SF030, SF031, SF032 forms from config dict.
 """
@@ -16,6 +16,7 @@ from scripts.docx_utils import (
     apply_tb,
     check,
     init_doc,
+    institution,
     set_cell_shading,
 )
 
@@ -32,7 +33,7 @@ def generate_sf030(config, output_dir):
     ext = cr.get("extension_requested", False)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "期中審查送審資料表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -105,7 +106,7 @@ def generate_sf031(config, output_dir):
     waiver = subjects.get("consent_waiver", False)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "期中報告書", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -274,7 +275,7 @@ def generate_sf032(config, output_dir):
     subjects = config["subjects"]
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "計畫展延申請表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))

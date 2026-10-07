@@ -1,13 +1,14 @@
 <!--
   Keywords: IRB form generator, IRB automation, ethics review, human subjects research,
-  KFSYSCC IRB, 和信治癌中心醫院 人體試驗委員會, IRB 送審, research ethics paperwork, python-docx
+  DOCX form filling, institution-agnostic, KFSYSCC IRB, 和信治癌中心醫院 人體試驗委員會,
+  IRB 送審, research ethics paperwork, python-docx
 -->
 
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — automated IRB form generator for KFSYSCC: 43 IRB forms from plain-text sources and one command" width="100%">
+  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — institution-agnostic IRB form generator: plain-text sources, one command, every official form" width="100%">
 </p>
 
-<h1 align="center">IRB-in-Hurry: Automated IRB Form Generator for KFSYSCC</h1>
+<h1 align="center">IRB-in-Hurry: Institution-Agnostic IRB Form Generator</h1>
 
 <p align="center">
   <strong>Turn a few plain-text files into a complete, submission-ready IRB packet — DOCX + PDF, in seconds.</strong>
@@ -23,6 +24,7 @@
 
 <p align="center">
   <a href="#quick-start">Quick Start</a> ·
+  <a href="#bring-your-own-institution">Your Institution</a> ·
   <a href="#form-coverage">Form Coverage</a> ·
   <a href="#usage">Usage</a> ·
   <a href="#faq">FAQ</a> ·
@@ -43,7 +45,7 @@ You have a brilliant retrospective study. You also have **five Word forms**, eac
 4. 🔍 **Checks the layout against the official blank forms** before a reviewer can catch a problem
 5. ✅ **Gives you a ■/□ checklist** of what's left (signatures, attachments, the email to the IRB office)
 
-It's an open-source **IRB form generator and research ethics paperwork automation tool** for the [Koo Foundation Sun Yat-Sen Cancer Center (KFSYSCC, 和信治癌中心醫院)](https://www.kfsyscc.org/) Institutional Review Board. It covers all **11 submission categories** and **43 official forms**: new case, amendment, continuing review, closure, SAE reporting, and more.
+It's an open-source **IRB form generator and research ethics paperwork automation tool** that works with any committee's official Word forms. Everything specific to one institution lives in a small profile folder. It ships with a complete reference pack for the [Koo Foundation Sun Yat-Sen Cancer Center (KFSYSCC, 和信治癌中心醫院)](https://www.kfsyscc.org/) IRB: all **11 submission categories** and **43 official forms**. To use it for your own hospital, drop in your blank `.docx` forms and run `make onboard` ([guide](docs/ONBOARDING.md)).
 
 > It won't do your ethics thinking for you, and that's the point. It does the typing.
 
@@ -69,7 +71,10 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 
 ## Features
 
-- **11 IRB categories** supported: new case, amendment, continuing review, closure, SAE, IB update, import, suspension, appeal, re-review, and other
+- **Institution-agnostic**: committee names, IRB-number label, submission address, paper, margins, font and form routing live in `institutions/<id>/`. The pipeline code has no institution literals
+- **Bring your own forms**: `make onboard INST=<id>` reads your blank DOCX forms and drafts the profile, label→field map and a form inventory
+- **Fill-the-blank engine**: writes values next to the labels of the *official* blank and flips □→■, so layout matches the original exactly
+- **11 IRB categories** supported in the KFSYSCC reference pack: new case, amendment, continuing review, closure, SAE, IB update, import, suspension, appeal, re-review, and other
 - **43 form generators** with automatic selection based on study type and submission phase
 - **Plain-text single source of truth**: `config.toml` + referenced `cv.toml` / Markdown, diffable and reusable across studies
 - **Smart routing**: retrospective study automatically selects expedited review + consent waiver forms
@@ -79,9 +84,31 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 - **Color-coded dashboard** for submission status overview
 - **Claude Code skill** for AI-assisted form preparation
 
+## Bring Your Own Institution
+
+```bash
+mkdir -p templates/myhosp && cp ~/Downloads/irb-forms/*.docx templates/myhosp/
+make onboard INST=myhosp        # → institutions/myhosp/{profile.toml, forms.py, form_inventory.md}
+# finish the TODOs (names, email, label→field map, phase routing)
+# config.toml: institution = "myhosp"  (top-level, before the first [table])
+make templates && make all      # generate → PDF → layout gate (0 errors) → dashboard
+```
+
+| You provide | The pipeline gives you |
+|---|---|
+| Your committee's blank `.docx`/`.doc` forms | Paper size, margins, fonts, labels and checkboxes per form, inventoried |
+| Names, submission address, phase routing | A `profile.toml` + `forms.py` form pack |
+| One `config.toml` per study | Filled forms, PDFs, ■/□ checklist, Win/Mac layout gate |
+
+- **Step-by-step fork guide:** [docs/ONBOARDING.md](docs/ONBOARDING.md)
+- **The method and its DOCX invariants:** [docs/METHODOLOGY.md](docs/METHODOLOGY.md)
+- **With Claude Code**, say *"onboard my hospital's forms in templates/myhosp"*
+
 ## Form Coverage
 
-All forms from the [KFSYSCC IRB website](https://www.kfsyscc.org/human/common_files/1) are implemented:
+### KFSYSCC reference pack
+
+All forms from the [KFSYSCC IRB website](https://www.kfsyscc.org/human/common_files/1) are implemented (`institutions/kfsyscc/`):
 
 | Category | Chinese | Forms | Status |
 |----------|---------|-------|--------|
@@ -124,8 +151,9 @@ make all
 | `make all` | Generate DOCX + PDF + layout check + dashboard |
 | `make check` | Resolve `@references` in `config.toml` and validate required fields |
 | `make init EXAMPLE=…` | Copy an example study from `examples/` to the root |
-| `make templates` | Download official blank forms from kfsyscc.org (once) |
-| `make validate` | Layout/font safety gate (A4, 標楷體, Win/Mac, vs official blank) |
+| `make templates` | Cache the institution's official blank forms (once) |
+| `make onboard INST=<id>` | Draft a new institution from its blanks in `templates/<id>/` |
+| `make validate` | Layout/font safety gate (paper, margins, form font, Win/Mac, vs official blank) |
 | `make generate` | Generate DOCX forms only |
 | `make pdf` | Convert DOCX to PDF + PNG previews |
 | `make dashboard` | Show submission status |
@@ -144,10 +172,11 @@ make all
 config.toml ─┬─ @cv.toml
              └─ @中文計畫摘要.md
      ↓
-config.py → generate_all.py → output/*.docx → convert.py → output/*.pdf
+config.py ─┐
+institutions/<id>/ (profile + forms) ─┴→ generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
-output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
+output/*.docx + templates/<id>/ (官方空白表單) → validate_layout.py
                                                  → output/layout_report.md
                                                  → output/preview/compare/*.png
 ```
@@ -159,7 +188,7 @@ output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
    and `output/preview/compare/*.png` (official blank left, generated right)
 4. **Submit the PDF** — fonts are embedded, so it looks identical on Windows and Mac;
    send the DOCX only if the IRB asks to edit it
-5. **Complete manual steps** — Sign forms, attach protocol, email to irb@kfsyscc.org
+5. **Complete manual steps** — Sign forms, attach protocol, send to the address in the profile (KFSYSCC: irb@kfsyscc.org)
 
 ### Single Source of Truth
 
@@ -169,6 +198,7 @@ and people stay in the formats that suit them:
 
 ```toml
 # config.toml
+institution = "kfsyscc"         # institutions/<id>/profile.toml
 phase    = "new"                 # new | amendment | continuing | closure | sae | …
 pi       = "@cv.toml#pi"
 co_pi    = "@cv.toml#co_pi"
@@ -208,7 +238,7 @@ Long free text elsewhere works the same way, e.g. `change_description = "@修正
 
 See [config-schema reference](.claude/skills/irb/references/config-schema.md) for all fields.
 
-### Study Type → Form Selection
+### Study Type → Form Selection (KFSYSCC pack)
 
 | Study Type | Review | Auto-selected Forms |
 |-----------|--------|-------------------|
@@ -223,7 +253,7 @@ See [config-schema reference](.claude/skills/irb/references/config-schema.md) fo
 make test
 ```
 
-Tests covering the config loader and `@references`, form selection logic, DOCX content verification, checklist generation, end-to-end generation for both new case and closure phases, and the layout safety gate.
+Tests cover the config loader and `@references`, form selection, DOCX content, checklist generation, end-to-end generation for new case and closure, the layout safety gate, the institution profile, the fill-the-blank engine, and onboarding from synthetic blanks.
 
 ## Dependencies
 
@@ -245,23 +275,30 @@ This project includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that en
 
 ```
 irb-in-hurry/
-├── config.toml                # Study metadata (single source of truth)
+├── config.toml                # Study metadata (single source of truth) + institution
 ├── cv.toml                    # Study team, referenced as @cv.toml#pi
 ├── 中文計畫摘要.md             # Proposal prose, referenced as @中文計畫摘要.md
 ├── examples/                  # Complete example studies (make init EXAMPLE=…)
 ├── Makefile                   # Easy commands
 ├── dashboard.sh               # Status overview
+├── institutions/
+│   └── kfsyscc/               # Reference pack: profile.toml + forms.py (registry + routing)
+├── templates/<id>/            # Official blank forms (gitignored)
+├── docs/                      # METHODOLOGY.md, ONBOARDING.md
 ├── scripts/
+│   ├── institution.py         # Active institution profile
 │   ├── config.py              # config.toml loader: @references, validation (clear errors, defaults), make check
+│   ├── template_fill.py       # Generic fill-the-blank generator
+│   ├── onboard.py             # Blanks → draft profile / forms / inventory
 │   ├── docx_utils.py          # Shared DOCX helpers
-│   ├── form_selector.py       # 43-form registry + routing
+│   ├── form_selector.py       # Phase routing over the active form pack
 │   ├── generate_all.py        # Main orchestrator (--phase, --output, --verbose)
 │   ├── set_phase.py           # Persist phase in config.toml, keeping comments
 │   ├── checklist.py           # ■/□ checklist generator
 │   ├── convert.py             # DOCX→PDF→PNG pipeline
-│   ├── fetch_templates.py     # Download official blank forms
+│   ├── fetch_templates.py     # Scrape or index official blank forms
 │   ├── validate_layout.py     # Layout/font safety gate
-│   └── generators/            # One module per IRB category
+│   └── generators/            # KFSYSCC rebuild generators, one module per category
 │       ├── new_case.py        # SF001, SF002, SF094, SF011, SF022
 │       ├── consent.py         # SF003-005, SF062, SF063, SF075, SF090-092
 │       ├── closure.py         # SF036, SF037, SF038, SF023
@@ -282,19 +319,19 @@ irb-in-hurry/
 ## FAQ
 
 **What is IRB-in-Hurry?**
-An open-source Python tool that fills in KFSYSCC Institutional Review Board (IRB) submission forms automatically from plain-text sources (a TOML config plus Markdown), producing Word (DOCX) and PDF files ready to sign.
+An open-source Python tool that fills in an institution's Institutional Review Board (IRB) submission forms automatically from plain-text sources (a TOML config plus Markdown), producing Word (DOCX) and PDF files ready to sign. It ships with the full KFSYSCC form pack and onboards other institutions from their blank Word forms.
 
 **Does it replace IRB review or ethical judgment?**
 No. It never submits, approves, or skips anything. It fills in the paperwork the IRB requires. Study design, risk assessment, and participant protection stay with you and the committee.
 
 **Which IRB submissions are supported?**
-All 11 KFSYSCC categories: new case (新案), re-review (複審), amendment (修正案), continuing review (期中審查), closure (結案), SAE (嚴重不良反應), IB update, project import, suspension, appeal (申覆), and other forms. That's 43 forms in total.
+For KFSYSCC, all 11 categories: new case (新案), re-review (複審), amendment (修正案), continuing review (期中審查), closure (結案), SAE (嚴重不良反應), IB update, project import, suspension, appeal (申覆), and other forms. That's 43 forms in total.
 
 **Will the forms look right on Windows and Mac?**
-Yes. Submit the generated PDF, which has fonts embedded. `make validate` checks A4 page size, official margins, and 標楷體 (DFKai-SB) usage against the official blank templates, and it has to report 0 errors before you submit.
+Yes. Submit the generated PDF, which has fonts embedded. `make validate` checks paper size, official margins, and the institution's form font (KFSYSCC: 標楷體 / DFKai-SB) against the official blank templates, and it has to report 0 errors before you submit.
 
 **Can I use it for another hospital's IRB?**
-The form registry and generators are KFSYSCC-specific, but the architecture (TOML + Markdown → form selector → per-category generators → layout gate) is designed to be adapted. Fork it and swap in your institution's templates.
+Yes, and that is what the design is for. Put your committee's blank forms in `templates/<id>/` and run `make onboard INST=<id>`. Then finish the drafted `institutions/<id>/profile.toml` and `forms.py`. Most forms need only a `label → config field` map, because the engine fills the official blank itself. See [docs/ONBOARDING.md](docs/ONBOARDING.md).
 
 **Does it work with AI assistants?**
 Yes. It includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that can classify your study from a proposal, draft `config.toml` and `中文計畫摘要.md`, and walk you through the remaining manual steps.
@@ -309,7 +346,7 @@ Yes. It includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that can cla
 
 ## License
 
-MIT. Free to use, fork, and adapt for your own institution's IRB.
+MIT. Free to use, fork, and adapt for your own institution's IRB. PRs that add an `institutions/<id>/` pack are welcome.
 
 ---
 

@@ -168,6 +168,13 @@ def test_enum_typos_rejected(raw_config, field, value):
         validate_config(raw_config)
 
 
+def test_unknown_institution_rejected(raw_config, monkeypatch):
+    monkeypatch.delenv("IRB_INSTITUTION", raising=False)
+    raw_config["institution"] = "no_such_irb"
+    with pytest.raises(ConfigError, match="no_such_irb"):
+        validate_config(raw_config)
+
+
 def test_wrong_section_type_rejected(tmp_path):
     path = write(tmp_path, {
         "config.toml": MINIMAL.replace('"@cv.toml#pi"', '"@pi.md"'),

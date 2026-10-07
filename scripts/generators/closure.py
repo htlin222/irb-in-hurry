@@ -1,4 +1,4 @@
-"""Closure form generators for IRB close-out review at KFSYSCC.
+"""Closure form generators for IRB close-out review (KFSYSCC form pack).
 
 Generates SF036, SF037, SF038, SF023 forms from config dict.
 """
@@ -16,6 +16,7 @@ from scripts.docx_utils import (
     apply_tb,
     check,
     init_doc,
+    institution,
     set_cell_shading,
 )
 
@@ -30,7 +31,7 @@ def generate_sf036(config, output_dir):
     is_drug = config["study"].get("drug_device", False)
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "結案審查送審資料表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -105,7 +106,7 @@ def generate_sf037(config, output_dir):
     is_retro = study.get("type", "") == "retrospective"
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "結案報告摘要表", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))
@@ -265,7 +266,7 @@ def generate_sf038(config, output_dir):
     dates = config["dates"]
 
     # ---- Cover page ----
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "結案報告書", bold=True, size=18,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(24))
@@ -334,7 +335,7 @@ def generate_sf023(config, output_dir):
     is_retro = study.get("type", "") == "retrospective"
 
     # Title
-    add_p(doc, "和信治癌中心醫院 人體試驗委員會", bold=True, size=16,
+    add_p(doc, institution().heading, bold=True, size=16,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(4))
     add_p(doc, "資料及安全性監測計畫報告書", bold=True, size=14,
           alignment=WD_ALIGN_PARAGRAPH.CENTER, sa=Pt(12))

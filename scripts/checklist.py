@@ -2,6 +2,8 @@
 import os
 from datetime import date
 
+from scripts.institution import current
+
 
 def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
     """Generate checklist.md from generation results.
@@ -72,8 +74,8 @@ def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
     lines.extend([
         "",
         "### Submission",
-        "□ Email electronic copies to irb@kfsyscc.org",
-        "□ Submit paper copies (1 original + 1 copy) to IRB office",
+        f"□ Email electronic copies to {current().submission_email}",
+        f"□ Submit paper copies ({current().submission.get('paper', 'per IRB office instructions')})",
         "",
         "---",
     ])

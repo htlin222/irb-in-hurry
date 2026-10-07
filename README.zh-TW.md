@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — 和信治癌中心醫院 IRB 送審表單自動產生工具：幾個純文字檔、一行指令、43 份表單" width="100%">
+  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — 不綁定機構的 IRB 送審表單自動產生工具：幾個純文字檔、一行指令、所有官方表單" width="100%">
 </p>
 
-# IRB-in-Hurry：和信醫院 IRB 送審表單自動產生器
+# IRB-in-Hurry：通用 IRB 送審表單自動產生器
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-pytest-brightgreen.svg)](#測試)
 [![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#表單涵蓋範圍)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](#授權條款)
 
-[和信治癌中心醫院](https://www.kfsyscc.org/) IRB（人體試驗委員會）送審文件自動化產生工具。
+不綁定特定機構的 IRB（人體試驗委員會）送審文件自動化產生工具。所有機構相關設定（院名、IRB 編號欄名、送件信箱、紙張、邊界、字型、表單與送審路徑）都放在 `institutions/<id>/`，程式本身沒有寫死任何院所。內建完整的[和信治癌中心醫院](https://www.kfsyscc.org/)表單包（43 份）作為參考實作。
 
-用純文字寫下研究資料（`config.toml` 放結構化資料、`cv.toml` 放研究團隊、`中文計畫摘要.md` 放計畫內容），執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。
+用純文字寫下研究資料（`config.toml` 放結構化資料、`cv.toml` 放研究團隊、`中文計畫摘要.md` 放計畫內容），執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。要用在自己的醫院？放進貴院的空白表單，執行 `make onboard`（見[導入指南](docs/ONBOARDING.md)）。
 
 [English README](README.md)
 
@@ -37,16 +37,33 @@
 
 ## 功能特色
 
-- **涵蓋 11 類 IRB 審查**：新案、修正案、複審、期中、結案、嚴重不良反應、主持人手冊、專案進口、其他、暫停/終止、申覆
+- **不綁定機構**：院名、送件方式、版面、字型、表單路徑皆由 `institutions/<id>/` 設定
+- **帶入自己的表單**：`make onboard INST=<id>` 讀取貴院空白 DOCX，自動草擬機構設定、欄位對應與表單清冊
+- **直接填寫官方空白表單**：依欄位標籤填值、□→■，版面與原表單完全一致
+- **涵蓋 11 類 IRB 審查**（和信參考表單包）：新案、修正案、複審、期中、結案、嚴重不良反應、主持人手冊、專案進口、其他、暫停/終止、申覆
 - **43 個表單產生器**：依研究類型與送審階段自動選取所需表單
 - **智慧判斷**：回溯性研究自動選取簡易審查 + 免取得知情同意相關表單
-- **DOCX 產生**：使用 python-docx，標楷體字型、■/□ 勾選格式
+- **DOCX 產生**：依機構字型（和信：標楷體）、■/□ 勾選格式
 - **PDF + PNG 預覽**：轉檔後可視覺化驗證排版
 - **純文字清單**：■/□ 追蹤自動產生表單與手動步驟
 - **彩色儀表板**：一目了然的送審進度
 - **Claude Code 技能**：AI 輔助表單準備
 
-## 表單涵蓋範圍
+## 導入你的機構
+
+```bash
+mkdir -p templates/myhosp && cp ~/Downloads/irb-forms/*.docx templates/myhosp/
+make onboard INST=myhosp        # → institutions/myhosp/{profile.toml, forms.py, form_inventory.md}
+# 完成 TODO（院名、信箱、欄位對應、送審階段）
+# config.toml 頂層（第一個 [table] 之前）設定 institution = "myhosp"
+make templates && make all      # 產生 → PDF → 版面檢查（0 錯誤）→ 儀表板
+```
+
+- 逐步導入指南：[docs/ONBOARDING.md](docs/ONBOARDING.md)
+- 方法論與 DOCX 跨平台原則：[docs/METHODOLOGY.md](docs/METHODOLOGY.md)
+- 使用 Claude Code：直接說「幫我導入 templates/myhosp 裡的表單」
+
+## 表單涵蓋範圍（和信參考表單包）
 
 所有表單皆依據 [和信治癌中心醫院 IRB 網站](https://www.kfsyscc.org/human/common_files/1)實作：
 
@@ -91,8 +108,9 @@ make all
 | `make all` | 產生 DOCX + PDF + 排版檢查 + 儀表板 |
 | `make check` | 解析 `config.toml` 的 `@引用` 並檢查必填欄位 |
 | `make init EXAMPLE=…` | 將 `examples/` 的範例研究複製到根目錄 |
-| `make templates` | 下載官網官方空白表單（只需一次） |
-| `make validate` | 排版／字型安全檢查（A4、標楷體、Win/Mac 通用、對照官方空白表單） |
+| `make templates` | 快取機構官方空白表單（只需一次） |
+| `make onboard INST=<id>` | 由 `templates/<id>/` 的空白表單草擬新機構設定 |
+| `make validate` | 排版／字型安全檢查（紙張、邊界、機構字型、Win/Mac 通用、對照官方空白表單） |
 | `make generate` | 僅產生 DOCX 表單 |
 | `make pdf` | 轉換為 PDF + PNG 預覽 |
 | `make dashboard` | 顯示送審狀態 |
@@ -114,7 +132,7 @@ config.toml ─┬─ @cv.toml
 config.py → generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
-output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
+output/*.docx + templates/<id>/ (官方空白表單) → validate_layout.py
                                                  → output/layout_report.md
                                                  → output/preview/compare/*.png
 ```
@@ -125,7 +143,7 @@ output/*.docx + templates/official/ (官方空白表單) → validate_layout.py
 3. **排版安全檢查** — `make validate` 必須 0 錯誤；查看 `output/layout_report.md`
    與 `output/preview/compare/*.png`（左：官方空白表單，右：產生結果）
 4. **以 PDF 交件** — 字型已嵌入，Windows 與 Mac 顯示一致；IRB 需修改時才附 DOCX
-5. **完成手動步驟** — 簽名、附上計畫書、email 至 irb@kfsyscc.org
+5. **完成手動步驟** — 簽名、附上計畫書、寄至機構設定中的送件信箱（和信：irb@kfsyscc.org）
 
 ### 單一資料來源（SSOT）
 
