@@ -4,10 +4,10 @@ import tomllib
 
 import pytest
 
-from scripts.config import ConfigError, load_config, main, parse_markdown, validate_config
-from scripts.set_phase import set_phase
+from irb_in_hurry.config import ConfigError, load_config, main, parse_markdown, validate_config
+from irb_in_hurry.set_phase import set_phase
 
-RETRO = "examples/gcsf-retrospective/config.toml"
+RETRO = "irb_in_hurry/examples/gcsf-retrospective/config.toml"
 
 MINIMAL = '''
 phase = "new"
@@ -32,10 +32,10 @@ def write(tmp_path, files):
 
 
 def test_examples_resolve_references():
-    cfg = load_config("examples/gcsf-retrospective/config.toml")
+    cfg = load_config("irb_in_hurry/examples/gcsf-retrospective/config.toml")
     assert cfg["pi"]["name"] == "林協霆"
     assert cfg["co_pi"][0]["name"] == "邱倫維"
-    prop = load_config("examples/tdxd-her2low/config.toml")["proposal"]
+    prop = load_config("irb_in_hurry/examples/tdxd-her2low/config.toml")["proposal"]
     assert prop["objectives"][0].startswith("主要目的")
     assert "DESTINY-Breast04 與 DESTINY-Breast06" in prop["background"]
 
@@ -99,7 +99,7 @@ def test_errors_are_explicit(tmp_path, files, message):
 
 
 def test_cli_shell_output_is_quoted(capsys):
-    assert main(["examples/tdxd-her2low/config.toml", "--shell", "--phase", "closure"]) == 0
+    assert main(["irb_in_hurry/examples/tdxd-her2low/config.toml", "--shell", "--phase", "closure"]) == 0
     out = capsys.readouterr().out
     assert "PHASE=closure" in out and "PI='林協霆'" in out
 

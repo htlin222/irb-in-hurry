@@ -3,7 +3,7 @@
 IRB-in-Hurry is a **method for processing a set of official Word forms**, not
 just a KFSYSCC tool. Any committee that publishes blank `.docx`/`.doc` forms
 (an IRB, REC, or ethics committee, or any office that runs on paperwork) fits the
-same pipeline. KFSYSCC is the reference implementation, with 43 forms in `institutions/kfsyscc/`.
+same pipeline. KFSYSCC is the reference implementation, with 43 forms in `irb_in_hurry/institutions/kfsyscc/`.
 
 ```
  study facts            institution knowledge                 per-submission output
@@ -24,17 +24,17 @@ same pipeline. KFSYSCC is the reference implementation, with 43 forms in `instit
 | **Institution profile** | `institutions/<id>/profile.toml` | names, IRB-number label, submission address, page size + margins, form font, where the blanks are | study data |
 | **Form pack** | `institutions/<id>/forms.py` | `FORM_REGISTRY` (form id → name, generator) and `PHASE_FORMS` (routing rules) | layout constants |
 | **Generators** | `blank_generator(...)` or a python-docx module | how one form gets its values | hardcoded names, emails, fonts (read `institution()`) |
-| **Gate** | `scripts/validate_layout.py` | checks output against the blanks + profile | institution-specific code |
+| **Gate** | `irb_in_hurry/validate_layout.py` | checks output against the blanks + profile | institution-specific code |
 
-The scripts in `scripts/` (`generate_all`, `form_selector`, `docx_utils`,
+The modules in `irb_in_hurry/` (`generate_all`, `form_selector`, `docx_utils`,
 `template_fill`, `validate_layout`, `fetch_templates`, `convert`, `checklist`)
 are institution-agnostic. They read the active profile through
-`scripts/institution.py` (`IRB_INSTITUTION` env var, then `institution` in
+`irb_in_hurry/institution.py` (`IRB_INSTITUTION` env var, then `institution` in
 `config.toml`, then `kfsyscc`).
 
 ## Two ways to generate a form
 
-| | **Fill the blank** (`scripts/template_fill.py`) | **Rebuild** (python-docx, e.g. `scripts/generators/`) |
+| | **Fill the blank** (`irb_in_hurry/template_fill.py`) | **Rebuild** (python-docx, e.g. `irb_in_hurry/generators/`) |
 |---|---|---|
 | How | copy the official blank, write values next to labels, flip □→■ | draw the form from scratch with `init_doc`, `add_header`, tables |
 | Layout fidelity | exact: the official file is the output | must be tuned until the gate passes |
@@ -46,10 +46,10 @@ where filling can't work. Both kinds can coexist in one `FORM_REGISTRY`.
 
 ## Pipeline steps
 
-1. **Harvest the blanks.** Use `make templates` (scraper driven by
+1. **Harvest the blanks.** Use `irbh templates` (scraper driven by
    `templates.index_url`) or drop the files into `templates/<id>/`. Keep them
    untouched: they are the ground truth for the gate.
-2. **Fingerprint each blank.** Run `make onboard INST=<id>`. It records the
+2. **Fingerprint each blank.** Run `irbh onboard <id>`. It records the
    paper size, margins (`<w:sectPr>`), dominant CJK/Latin font, language tag,
    table labels, `label：＿＿` fill-in lines and checkbox options in
    `form_inventory.md`.
@@ -62,7 +62,7 @@ where filling can't work. Both kinds can coexist in one `FORM_REGISTRY`.
    `(predicate, [forms])` conditions such as *expedited → expedited-review checklist* or
    *consent waived → waiver form*. Mirror the institution's own submission
    checklist form; it is the routing spec.
-6. **Generate → convert → gate.** `make all` runs `generate_all` (which applies the
+6. **Generate → convert → gate.** `irbh all` runs `generate_all` (which applies the
    official page setup), then `convert` (PDF + PNG), then `validate_layout`. Ship only
    at **0 errors**, and submit the PDF.
 7. **Close the loop.** Use `checklist.md` for the manual steps (signatures, attachments,
@@ -103,11 +103,11 @@ Not handled automatically, so rebuild these forms or edit the blank: text boxes 
 ## Adapting checklist
 
 - [ ] Blanks in `templates/<id>/`, untouched
-- [ ] `make onboard INST=<id>` → `profile.toml`, `forms.py`, `form_inventory.md`
+- [ ] `irbh onboard <id>` → `profile.toml`, `forms.py`, `form_inventory.md`
 - [ ] Every `TODO` in `profile.toml` resolved (names, email, font aliases, lang)
 - [ ] Every label, fill-in line and checkbox in `form_inventory.md` mapped or deliberately left blank
 - [ ] `PHASE_FORMS` mirrors the institution's own submission checklist
-- [ ] `institution = "<id>"` in `config.toml`, `make all` passes with 0 errors
+- [ ] `institution = "<id>"` in `config.toml`, `irbh all` passes with 0 errors
 - [ ] Side-by-side previews in `output/preview/compare/` look right
 - [ ] Any new config fields documented in `.claude/skills/irb/references/config-schema.md`
 

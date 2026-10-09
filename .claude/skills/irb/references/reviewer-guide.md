@@ -2,7 +2,7 @@
 
 ## When to Use
 
-When Claude acts as the simulated IRB reviewer (`make review`), follow this guide to evaluate generated forms like an experienced reviewer would. This is also the reference for users who serve as IRB committee members.
+When Claude acts as the simulated IRB reviewer (`irbh review`), follow this guide to evaluate generated forms like an experienced reviewer would. This is also the reference for users who serve as IRB committee members.
 
 ---
 

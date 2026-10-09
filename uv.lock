@@ -22,8 +22,8 @@ wheels = [
 
 [[package]]
 name = "irb-in-hurry"
-version = "1.1.0"
-source = { virtual = "." }
+version = "2.0.0"
+source = { editable = "." }
 dependencies = [
     { name = "pdf2image" },
     { name = "pillow" },

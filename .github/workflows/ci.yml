@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]  # tomllib needs 3.11+
+        python-version: ["3.11", "3.12", "3.13"]  # tomllib needs 3.11+
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -19,3 +19,29 @@ jobs:
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run pytest -q
+
+  # The installed package must work outside the checkout: build the wheel,
+  # install it into a clean venv and run a study from an empty folder.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv build
+      - name: Smoke-test the wheel in an empty study folder
+        run: |
+          uv venv /tmp/irbh-venv
+          VIRTUAL_ENV=/tmp/irbh-venv uv pip install dist/*.whl
+          export PATH=/tmp/irbh-venv/bin:$PATH
+          mkdir /tmp/study && cd /tmp/study
+          irbh --version
+          irbh init tdxd-her2low
+          test -f .claude/skills/irb/SKILL.md
+          irbh institutions
+          irbh check
+          irbh generate
+          irbh closure
+          irbh validate --no-render
+          irbh dashboard

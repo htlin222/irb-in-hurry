@@ -2,7 +2,7 @@
 
 ## Overview
 
-The simulated reviewer (`scripts/reviewer.py`) applies 7 categories of criteria based on 45 CFR 46.111 and institutional standards (KFSYSCC as reference); submission details come from the active institution profile. Run via `make review` after generating forms.
+The simulated reviewer (`irb_in_hurry/reviewer.py`) applies 7 categories of criteria based on 45 CFR 46.111 and institutional standards (KFSYSCC as reference); submission details come from the active institution profile. Run via `irbh review` after generating forms.
 
 ## Review Categories
 
@@ -70,7 +70,7 @@ The reviewer scans for incomplete content patterns: `請填寫`, `＿＿`, `__`,
 ## Usage
 
 ```bash
-make all        # Generate forms
-make review     # Run reviewer → reviewers/review_*.md
+irbh all        # Generate forms
+irbh review     # Run reviewer → reviewers/review_*.md
 cat reviewers/review_*.md  # Read opinions
 ```

@@ -8,7 +8,7 @@
 # (path relative to this one). Edit prose in Markdown, people in cv.toml.
 # Field reference: .claude/skills/irb/references/config-schema.md
 
-institution = "kfsyscc"   # institutions/<id>/profile.toml
+institution = "kfsyscc"   # institution pack id (`irbh institutions` lists them)
 phase = "new"   # new | amendment | re_review | continuing | closure | sae | ib_update | import | suspension | appeal
 
 pi       = "@cv.toml#pi"

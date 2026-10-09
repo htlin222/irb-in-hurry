@@ -49,7 +49,7 @@ deviations          = 0           # Number of protocol deviations
 extension_requested = false       # Request study period extension
 ```
 
-Generate with `make continuing` (= `make all PHASE=continuing`); `config.toml` is not edited.
+Generate with `irbh continuing` (= `irbh all --phase continuing`); `config.toml` is not edited.
 
 ## Conditional Forms
 

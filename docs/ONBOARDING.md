@@ -1,7 +1,7 @@
 # Onboarding your institution (fork guide)
 
 You have your committee's blank Word forms. This guide gets you from those
-files to `make all` producing a filled, gate-checked packet. Budget about an
+files to `irbh all` producing a filled, gate-checked packet. Budget about an
 hour for a 5–10 form pack. Most of that time goes on deciding routing, not
 on code.
 
@@ -23,10 +23,12 @@ Keep the original filenames. If every filename carries a code (`IRB-F01`,
 ## 2. Scaffold
 
 ```bash
-make onboard INST=myhosp
+irbh onboard myhosp
 ```
 
-This writes three drafts to `institutions/myhosp/`:
+This writes three drafts to `institutions/myhosp/` in your study folder. A local
+pack there wins over an installed or bundled one with the same id
+(`irbh institutions` shows which one is active):
 
 | File | What to do with it |
 |---|---|
@@ -35,7 +37,7 @@ This writes three drafts to `institutions/myhosp/`:
 | `forms.py` | One `blank_generator(...)` per form. Recognised labels are pre-mapped (`計畫名稱 → {study.title_zh}`), and the rest are `# TODO` lines. |
 
 Re-running never overwrites your edits unless you pass `--force`
-(`uv run python scripts/onboard.py myhosp --force`).
+(`irbh onboard myhosp --force`).
 
 ## 3. Finish the label map
 
@@ -98,8 +100,8 @@ institution = "myhosp"
 ```
 
 ```bash
-make templates   # indexes your blanks → templates/myhosp/index.json
-make all         # generate → PDF → layout gate → dashboard
+irbh templates   # indexes your blanks → templates/myhosp/index.json
+irbh all         # generate → PDF → layout gate → dashboard
 ```
 
 The generator prints `⚠ F02: labels not found in blank: …` for any key that
@@ -107,7 +109,7 @@ didn't match. Fix the key, or remove it.
 
 ## 6. Pass the gate
 
-`make validate` must report **0 errors**. Then open
+`irbh validate` must report **0 errors**. Then open
 `output/preview/compare/*.png`, which shows the official blank on the left and the generated form on the right.
 
 | Gate message | Usual fix |
@@ -121,7 +123,7 @@ didn't match. Fix the key, or remove it.
 
 Text boxes, content controls, PDF-only forms and generated prose (a protocol summary)
 need a python-docx generator. Copy the shape of
-`scripts/generators/proposal.py` into `institutions/myhosp/generators.py` and
+`irb_in_hurry/generators/proposal.py` into `institutions/myhosp/generators.py` and
 register it with its full module path:
 
 ```python
@@ -129,11 +131,33 @@ register it with its full module path:
 ```
 
 Use `init_doc()`, `add_header()`, `add_p()`, `add_ct()` and `check()` from
-`scripts.docx_utils`. They read the profile, so `institution().heading`,
+`irb_in_hurry.docx_utils`. They read the profile, so `institution().heading`,
 `institution().irb_no_label`, the font and the page setup all follow your institution.
 
-## 8. Share it back (optional)
+## 8. Share it (optional)
 
-An `institutions/<id>/` folder is self-contained. A PR that adds one helps the next
-researcher at your hospital. Don't commit the blanks themselves
-(`templates/` is gitignored), and don't commit real study data.
+An `institutions/<id>/` folder is self-contained. Two ways to pass it on:
+
+- **PR it into irb-in-hurry** as `irb_in_hurry/institutions/<id>/` (change the
+  module paths to `irb_in_hurry.institutions.<id>.forms` and add it to the
+  `irb_in_hurry.institutions` entry points in `pyproject.toml`). It then ships
+  with every install.
+- **Publish it as its own small package**, so colleagues `uv tool install
+  irb-in-hurry --with irb-pack-myhosp`. Rename the folder to an importable
+  package (`irb_pack_myhosp/`), point `forms_module` and the `FORM_REGISTRY`
+  module paths at `irb_pack_myhosp.forms`, and register it:
+
+  ```toml
+  # pyproject.toml of irb-pack-myhosp
+  [project]
+  name = "irb-pack-myhosp"
+  dependencies = ["irb-in-hurry>=2"]
+
+  [project.entry-points."irb_in_hurry.institutions"]
+  myhosp = "irb_pack_myhosp"   # the package folder holding profile.toml + forms.py
+  ```
+
+  Ship `profile.toml` inside the package (hatchling includes it by default).
+
+Either way, don't commit or package the blanks themselves (`templates/` is
+gitignored; they are the institution's documents), and don't commit real study data.

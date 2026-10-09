@@ -46,7 +46,7 @@ affects_consent    = false   # Does the change require consent form update?
 affects_risk       = false   # Does the change alter subject risk?
 ```
 
-Generate with `make amendment` (= `make all PHASE=amendment`); `config.toml` is not edited.
+Generate with `irbh amendment` (= `irbh all --phase amendment`); `config.toml` is not edited.
 
 ## Conditional Forms
 
