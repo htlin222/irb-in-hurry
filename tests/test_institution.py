@@ -1,15 +1,12 @@
 """Institution-agnostic pipeline: profile, fill-the-blank engine, onboarding."""
 import os
-import sys
 import tomllib
 
 from docx import Document
 from docx.shared import Twips
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from scripts import institution, onboard
-from scripts.template_fill import fill_blank, resolve
+from irb_in_hurry import institution, onboard
+from irb_in_hurry.template_fill import fill_blank, resolve
 
 CONFIG = {
     "study": {"irb_no": "2026-001", "title_zh": "示範研究", "review_type": "expedited"},

@@ -6,7 +6,7 @@ description: Complete reference for config.toml, its @file references, and every
 # Config Schema Reference
 
 All study data lives in plain text with `config.toml` as the entry point; nothing is
-hardcoded. `make check` (`scripts/config.py`) resolves references, validates required
+hardcoded. `irbh check` (`irb_in_hurry/config.py`) resolves references, validates required
 fields and prints a summary; `--json` prints the fully resolved config.
 Institution facts (committee name, IRB-number label, submission address, page,
 font) are **not** config: they live in `institutions/<id>/profile.toml`.
@@ -50,20 +50,20 @@ One of: `new`, `amendment`, `re_review`, `continuing`, `closure`, `sae`, `ib_upd
 (limited to the phases the institution's form pack routes).
 
 Top-level key (must appear before the first `[table]`). Override per run without editing
-the file: `make closure`, `make all PHASE=closure`, or `generate_all.py --phase closure`.
-To persist a switch, `make set-phase PHASE=closure` (`scripts/set_phase.py`) rewrites only
+the file: `irbh closure` or `irbh all --phase closure`.
+To persist a switch, `irbh set-phase closure` (`irb_in_hurry/set_phase.py`) rewrites only
 the value on the `phase =` line, keeping its comment and the rest of the file.
 
 ## Validation
 
-`scripts/config.py` validates the resolved config on load and lists every problem at
+`irb_in_hurry/config.py` validates the resolved config on load and lists every problem at
 once: missing required fields, an unknown `institution`, a `phase` the institution's form
 pack doesn't route, unknown `study.type` / `study.review_type`,
 sections of the wrong shape (e.g. `pi` resolving to text instead of a table), co-PIs
 without a `name`, and quoted booleans (`"false"` is a non-empty string and would count
 as true — write `false`). Optional sections (`co_pi`, `closure`, `amendment`,
 `continuing_review`) may be omitted entirely; they and optional fields generators index
-directly are filled with neutral defaults (`DEFAULTS` / `BOOL_FIELDS` in `scripts/config.py`).
+directly are filled with neutral defaults (`DEFAULTS` / `BOOL_FIELDS` in `irb_in_hurry/config.py`).
 
 ## `study` (required)
 
@@ -134,7 +134,7 @@ groups = [
 
 Free text for the 中文計畫摘要, one `##` section per key. A missing section keeps the
 form's placeholder. Lists render as `1. … 2. …`. Keep the whole summary within 2 pages.
-Full example: `examples/tdxd-her2low/中文計畫摘要.md`.
+Full example: `irbh init tdxd-her2low` copies one (`irb_in_hurry/examples/tdxd-her2low/中文計畫摘要.md`).
 
 | Key | Markdown heading | Form section |
 |---|---|---|

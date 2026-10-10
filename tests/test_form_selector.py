@@ -2,13 +2,13 @@
 
 import pytest
 
-from scripts.config import load_config
-from scripts.form_selector import FORM_REGISTRY, get_generator, select_forms
+from irb_in_hurry.config import load_config
+from irb_in_hurry.form_selector import FORM_REGISTRY, get_generator, select_forms
 
 
 @pytest.fixture
 def retro_config():
-    return load_config("examples/gcsf-retrospective/config.toml")
+    return load_config("irb_in_hurry/examples/gcsf-retrospective/config.toml")
 
 
 def test_retrospective_new_case_selects_correct_forms(retro_config):
@@ -93,7 +93,7 @@ def test_get_generator_unknown_returns_none():
 
 def test_form_registry_completeness():
     """All forms in phase rules should be in registry."""
-    from scripts.form_selector import PHASE_FORMS
+    from irb_in_hurry.form_selector import PHASE_FORMS
     for phase, rules in PHASE_FORMS.items():
         for fid in rules["base"]:
             assert fid in FORM_REGISTRY, f"{fid} in {phase} base not in registry"

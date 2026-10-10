@@ -1,10 +1,9 @@
 """Layout safety gate: generated forms must be A4 + 標楷體 on every platform."""
-import importlib
 
 import pytest
 from docx import Document
 
-from scripts.docx_utils import (
+from irb_in_hurry.docx_utils import (
     add_p,
     apply_official_page_setup,
     form_filename,
@@ -13,23 +12,22 @@ from scripts.docx_utils import (
     load_config,
     official_margins,
 )
-from scripts.form_selector import get_generator, select_forms
-from scripts.validate_layout import validate_file
+from irb_in_hurry.form_selector import load_generator, select_forms
+from irb_in_hurry.validate_layout import validate_file
 
 PHASES = ["new", "amendment", "continuing", "closure"]
 
 
 @pytest.fixture
 def retro_config():
-    return load_config("examples/gcsf-retrospective/config.toml")
+    return load_config("irb_in_hurry/examples/gcsf-retrospective/config.toml")
 
 
 def _generate(config, phase, out):
     config["phase"] = phase
     paths = []
     for fid, _ in select_forms(config):
-        mod_path, func_name = get_generator(fid)
-        path = getattr(importlib.import_module(f"scripts.{mod_path}"), func_name)(config, out)
+        path = load_generator(fid)(config, out)
         apply_official_page_setup(path)
         paths.append(path)
     return paths

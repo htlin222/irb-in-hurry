@@ -5,7 +5,7 @@
 -->
 
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — institution-agnostic IRB form generator: plain-text sources, one command, every official form" width="100%">
+  <img src="https://raw.githubusercontent.com/htlin222/irb-in-hurry/main/docs/assets/banner.svg" alt="IRB-in-Hurry — institution-agnostic IRB form generator: plain-text sources, one command, every official form" width="100%">
 </p>
 
 <h1 align="center">IRB-in-Hurry: Institution-Agnostic IRB Form Generator</h1>
@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-blue.svg" alt="Python 3.10+"></a>
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
   <a href="#testing"><img src="https://img.shields.io/badge/tests-pytest-brightgreen.svg" alt="Tests: pytest"></a>
   <a href="#form-coverage"><img src="https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg" alt="IRB forms: 43 of 43"></a>
   <a href="#claude-code-integration"><img src="https://img.shields.io/badge/Claude%20Code-skill-orange.svg" alt="Claude Code skill"></a>
@@ -28,7 +28,7 @@
   <a href="#form-coverage">Form Coverage</a> ·
   <a href="#usage">Usage</a> ·
   <a href="#faq">FAQ</a> ·
-  <a href="README.zh-TW.md">繁體中文</a>
+  <a href="https://github.com/htlin222/irb-in-hurry/blob/main/README.zh-TW.md">繁體中文</a>
 </p>
 
 ---
@@ -37,7 +37,7 @@
 
 You have a brilliant retrospective study. You also have **five Word forms**, each wanting the same IRB number, the same bilingual title, the same PI phone extension, and a very particular opinion about whether a checkbox is ■ or □. You've typed your own name in 標楷體 eleven times tonight. The twelfth time, you misspelled it.
 
-**IRB-in-Hurry** is the colleague who stays late so you don't have to. Describe your study once in plain text — `config.toml` for the facts, `cv.toml` for the team, `中文計畫摘要.md` for the prose — run `make all`, and it:
+**IRB-in-Hurry** is the colleague who stays late so you don't have to. Describe your study once in plain text — `config.toml` for the facts, `cv.toml` for the team, `中文計畫摘要.md` for the prose — run `irbh all`, and it:
 
 1. 🧭 **Figures out which forms you need**, based on study type and submission phase
 2. 📝 **Fills every one of them in**: headers, titles, checkboxes, dates, and the rest
@@ -45,7 +45,7 @@ You have a brilliant retrospective study. You also have **five Word forms**, eac
 4. 🔍 **Checks the layout against the official blank forms** before a reviewer can catch a problem
 5. ✅ **Gives you a ■/□ checklist** of what's left (signatures, attachments, the email to the IRB office)
 
-It's an open-source **IRB form generator and research ethics paperwork automation tool** that works with any committee's official Word forms. Everything specific to one institution lives in a small profile folder. It ships with a complete reference pack for the [Koo Foundation Sun Yat-Sen Cancer Center (KFSYSCC, 和信治癌中心醫院)](https://www.kfsyscc.org/) IRB: all **11 submission categories** and **43 official forms**. To use it for your own hospital, drop in your blank `.docx` forms and run `make onboard` ([guide](docs/ONBOARDING.md)).
+It's an open-source **IRB form generator and research ethics paperwork automation tool** that works with any committee's official Word forms. Everything specific to one institution lives in a small profile folder. It ships with a complete reference pack for the [Koo Foundation Sun Yat-Sen Cancer Center (KFSYSCC, 和信治癌中心醫院)](https://www.kfsyscc.org/) IRB: all **11 submission categories** and **43 official forms**. To use it for your own hospital, drop in your blank `.docx` forms and run `irbh onboard` ([guide](https://github.com/htlin222/irb-in-hurry/blob/main/docs/ONBOARDING.md)).
 
 > It won't do your ethics thinking for you, and that's the point. It does the typing.
 
@@ -71,8 +71,8 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 
 ## Features
 
-- **Institution-agnostic**: committee names, IRB-number label, submission address, paper, margins, font and form routing live in `institutions/<id>/`. The pipeline code has no institution literals
-- **Bring your own forms**: `make onboard INST=<id>` reads your blank DOCX forms and drafts the profile, label→field map and a form inventory
+- **Institution-agnostic**: committee names, IRB-number label, submission address, paper, margins, font and form routing live in an institution pack (`profile.toml` + `forms.py`). The pipeline code has no institution literals
+- **Bring your own forms**: `irbh onboard <id>` reads your blank DOCX forms and drafts the profile, label→field map and a form inventory
 - **Fill-the-blank engine**: writes values next to the labels of the *official* blank and flips □→■, so layout matches the original exactly
 - **11 IRB categories** supported in the KFSYSCC reference pack: new case, amendment, continuing review, closure, SAE, IB update, import, suspension, appeal, re-review, and other
 - **43 form generators** with automatic selection based on study type and submission phase
@@ -88,10 +88,10 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 
 ```bash
 mkdir -p templates/myhosp && cp ~/Downloads/irb-forms/*.docx templates/myhosp/
-make onboard INST=myhosp        # → institutions/myhosp/{profile.toml, forms.py, form_inventory.md}
+irbh onboard myhosp             # → institutions/myhosp/{profile.toml, forms.py, form_inventory.md}
 # finish the TODOs (names, email, label→field map, phase routing)
 # config.toml: institution = "myhosp"  (top-level, before the first [table])
-make templates && make all      # generate → PDF → layout gate (0 errors) → dashboard
+irbh templates && irbh all      # generate → PDF → layout gate (0 errors) → dashboard
 ```
 
 | You provide | The pipeline gives you |
@@ -100,15 +100,15 @@ make templates && make all      # generate → PDF → layout gate (0 errors) �
 | Names, submission address, phase routing | A `profile.toml` + `forms.py` form pack |
 | One `config.toml` per study | Filled forms, PDFs, ■/□ checklist, Win/Mac layout gate |
 
-- **Step-by-step fork guide:** [docs/ONBOARDING.md](docs/ONBOARDING.md)
-- **The method and its DOCX invariants:** [docs/METHODOLOGY.md](docs/METHODOLOGY.md)
+- **Step-by-step fork guide:** [docs/ONBOARDING.md](https://github.com/htlin222/irb-in-hurry/blob/main/docs/ONBOARDING.md)
+- **The method and its DOCX invariants:** [docs/METHODOLOGY.md](https://github.com/htlin222/irb-in-hurry/blob/main/docs/METHODOLOGY.md)
 - **With Claude Code**, say *"onboard my hospital's forms in templates/myhosp"*
 
 ## Form Coverage
 
 ### KFSYSCC reference pack
 
-All forms from the [KFSYSCC IRB website](https://www.kfsyscc.org/human/common_files/1) are implemented (`institutions/kfsyscc/`):
+All forms from the [KFSYSCC IRB website](https://www.kfsyscc.org/human/common_files/1) are implemented (`irb_in_hurry/institutions/kfsyscc/`):
 
 | Category | Chinese | Forms | Status |
 |----------|---------|-------|--------|
@@ -127,44 +127,67 @@ All forms from the [KFSYSCC IRB website](https://www.kfsyscc.org/human/common_fi
 
 ## Quick Start
 
-```bash
-# 1. Clone and setup
-git clone https://github.com/htlin222/irb-in-hurry.git
-cd irb-in-hurry
-make setup
+IRB-in-Hurry is a Python package with one command, `irbh`. Install it once with
+[uv](https://docs.astral.sh/uv/), then keep each study in its own folder:
 
-# 2. Start from an example (or edit config.toml / cv.toml / 中文計畫摘要.md directly)
-make init EXAMPLE=tdxd-her2low      # T-DXd vs chemo, HER2-low, PSM — filled 中文計畫摘要
-#   make init EXAMPLE=gcsf-retrospective FORCE=1   # also exercises closure
-make check                          # resolve @references, validate required fields
+```bash
+# 1. Install (puts `irbh` on your PATH; `uv tool upgrade irb-in-hurry` later)
+uv tool install irb-in-hurry
+#   not on PyPI yet / want the latest main:
+#   uv tool install git+https://github.com/htlin222/irb-in-hurry
+
+# 2. Start a study folder from an example (or write config.toml / cv.toml / 中文計畫摘要.md yourself)
+mkdir my-study && cd my-study
+irbh init tdxd-her2low             # T-DXd vs chemo, HER2-low, PSM (`irbh init` lists examples)
+irbh doctor                         # LibreOffice, poppler, form font, config, blanks
 
 # 3. Generate everything
-make all
+irbh templates                      # once: cache the institution's official blank forms
+irbh all                            # DOCX → PDF → layout gate → dashboard
 ```
+
+`irbh init` also copies the Claude Code skill into `.claude/skills/irb/`, so you can
+open the folder in Claude Code and describe your study in plain words instead.
+No install at all: `uvx --from irb-in-hurry irbh all`.
 
 ## Usage
 
-### Makefile Commands
+### `irbh` commands
+
+Run them in the study folder (or point at one with `irbh -C path/to/study …`).
 
 | Command | Description |
 |---------|-------------|
-| `make all` | Generate DOCX + PDF + layout check + dashboard |
-| `make check` | Resolve `@references` in `config.toml` and validate required fields |
-| `make init EXAMPLE=…` | Copy an example study from `examples/` to the root |
-| `make templates` | Cache the institution's official blank forms (once) |
-| `make onboard INST=<id>` | Draft a new institution from its blanks in `templates/<id>/` |
-| `make validate` | Layout/font safety gate (paper, margins, form font, Win/Mac, vs official blank) |
-| `make generate` | Generate DOCX forms only |
-| `make pdf` | Convert DOCX to PDF + PNG previews |
-| `make dashboard` | Show submission status |
-| `make checklist` | View ■/□ checklist |
-| `make review` | Simulated IRB reviewer on generated forms |
-| `make test` | Run pytest |
-| `make lint` | Lint with ruff (`make format` auto-fixes) |
-| `make clean` | Remove generated files |
-| `make closure` | `make all PHASE=closure` — any phase works (`new`, `amendment`, `continuing`, `sae`, …); `config.toml` is never rewritten |
-| `make review` | Simulated IRB reviewer on the generated forms |
-| `make set-phase PHASE=closure` | Persist the phase in `config.toml` (edits only the `phase =` line, comments kept) |
+| `irbh all` | Generate DOCX + PDF + layout check + dashboard |
+| `irbh closure` | `irbh all --phase closure` — any phase works (`new`, `amendment`, `continuing`, `sae`, …); `config.toml` is never rewritten |
+| `irbh check` | Resolve `@references` in `config.toml` and validate required fields (`--json` prints the result) |
+| `irbh init [example]` | Start a study from a bundled example (no name: list them) + install the Claude Code skill |
+| `irbh templates` | Cache the institution's official blank forms (once; `$IRB_TEMPLATES` shares them across studies) |
+| `irbh onboard <id>` | Draft a new institution pack from its blanks in `templates/<id>/` |
+| `irbh institutions` | List institution packs (local, installed, bundled) and which is active |
+| `irbh validate` | Layout/font safety gate (paper, margins, form font, Win/Mac, vs official blank) |
+| `irbh generate` | Generate DOCX forms only |
+| `irbh pdf` | Convert DOCX to PDF + PNG previews |
+| `irbh dashboard` | Show submission status |
+| `irbh review` | Simulated IRB reviewer on the generated forms |
+| `irbh set-phase closure` | Persist the phase in `config.toml` (edits only the `phase =` line, comments kept) |
+| `irbh skill` | (Re)install the Claude Code skill into `.claude/skills/irb/` |
+| `irbh doctor` | Check LibreOffice, poppler, the form font, config and cached blanks |
+
+`--phase` defaults to `$PHASE`, so `PHASE=closure irbh all` works too.
+
+### Working from a checkout
+
+Contributors can run everything from a clone; the `Makefile` wraps the same CLI:
+
+```bash
+git clone https://github.com/htlin222/irb-in-hurry.git && cd irb-in-hurry
+make setup                                    # uv sync (installs `irbh` into .venv)
+make init EXAMPLE=gcsf-retrospective FORCE=1  # = uv run irbh init gcsf-retrospective --force
+make all                                      # = uv run irbh all; `make closure` = make all PHASE=closure
+make test lint                                # pytest + ruff, as CI runs them
+make build                                    # sdist + wheel into dist/
+```
 
 ### Workflow
 
@@ -173,7 +196,7 @@ config.toml ─┬─ @cv.toml
              └─ @中文計畫摘要.md
      ↓
 config.py ─┐
-institutions/<id>/ (profile + forms) ─┴→ generate_all.py → output/*.docx → convert.py → output/*.pdf
+institution pack (profile + forms) ─┴→ generate_all.py → output/*.docx → convert.py → output/*.pdf
                                                            → output/preview/*.png
                                   checklist.md ← checklist.py
 output/*.docx + templates/<id>/ (官方空白表單) → validate_layout.py
@@ -182,9 +205,9 @@ output/*.docx + templates/<id>/ (官方空白表單) → validate_layout.py
 ```
 
 1. **Edit the plain-text sources** — `config.toml` (IRB number, titles, dates, study type),
-   `cv.toml` (PI / co-PI), `中文計畫摘要.md` (background, objectives, methods…); `make check`
-2. **`make all`** — Generates DOCX forms, converts to PDF, shows dashboard
-3. **Layout gate** — `make validate` must report 0 errors; open `output/layout_report.md`
+   `cv.toml` (PI / co-PI), `中文計畫摘要.md` (background, objectives, methods…); `irbh check`
+2. **`irbh all`** — Generates DOCX forms, converts to PDF, shows dashboard
+3. **Layout gate** — `irbh validate` must report 0 errors; open `output/layout_report.md`
    and `output/preview/compare/*.png` (official blank left, generated right)
 4. **Submit the PDF** — fonts are embedded, so it looks identical on Windows and Mac;
    send the DOCX only if the IRB asks to edit it
@@ -198,7 +221,7 @@ and people stay in the formats that suit them:
 
 ```toml
 # config.toml
-institution = "kfsyscc"         # institutions/<id>/profile.toml
+institution = "kfsyscc"         # institution pack id (`irbh institutions`)
 phase    = "new"                 # new | amendment | continuing | closure | sae | …
 pi       = "@cv.toml#pi"
 co_pi    = "@cv.toml#co_pi"
@@ -236,7 +259,7 @@ email = "htlin222@kfsyscc.org"
 
 Long free text elsewhere works the same way, e.g. `change_description = "@修正說明.md"`.
 
-See [config-schema reference](.claude/skills/irb/references/config-schema.md) for all fields.
+See [config-schema reference](https://github.com/htlin222/irb-in-hurry/blob/main/.claude/skills/irb/references/config-schema.md) for all fields.
 
 ### Study Type → Form Selection (KFSYSCC pack)
 
@@ -264,7 +287,7 @@ Tests cover the config loader and `@references`, form selection, DOCX content, c
 
 ## Claude Code Integration
 
-This project includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that enables AI-assisted IRB form preparation. When using Claude Code in this repo, it can:
+This project includes a [Claude Code skill](https://github.com/htlin222/irb-in-hurry/blob/main/.claude/skills/irb/SKILL.md) that enables AI-assisted IRB form preparation. It ships inside the package: `irbh init` (or `irbh skill`) copies it into your study folder's `.claude/skills/irb/`. When using Claude Code in that folder (or in this repo), it can:
 
 - Classify your study type from a proposal description
 - Draft `config.toml`, `cv.toml` and `中文計畫摘要.md` from your study details
@@ -278,16 +301,18 @@ irb-in-hurry/
 ├── config.toml                # Study metadata (single source of truth) + institution
 ├── cv.toml                    # Study team, referenced as @cv.toml#pi
 ├── 中文計畫摘要.md             # Proposal prose, referenced as @中文計畫摘要.md
-├── examples/                  # Complete example studies (make init EXAMPLE=…)
-├── Makefile                   # Easy commands
-├── dashboard.sh               # Status overview
-├── institutions/
-│   └── kfsyscc/               # Reference pack: profile.toml + forms.py (registry + routing)
+├── Makefile                   # Contributor shortcuts over `irbh`
+├── pyproject.toml             # Package metadata, `irbh` entry point, bundled packs
 ├── templates/<id>/            # Official blank forms (gitignored)
 ├── docs/                      # METHODOLOGY.md, ONBOARDING.md
-├── scripts/
+├── irb_in_hurry/              # The package (`irbh` = irb_in_hurry.cli)
+│   ├── cli.py                 # `irbh` command line
+│   ├── dashboard.py           # Status overview
+│   ├── examples/              # Complete example studies (irbh init …)
+│   ├── institutions/
+│   │   └── kfsyscc/           # Reference pack: profile.toml + forms.py (registry + routing)
 │   ├── institution.py         # Active institution profile
-│   ├── config.py              # config.toml loader: @references, validation (clear errors, defaults), make check
+│   ├── config.py              # config.toml loader: @references, validation (clear errors, defaults), irbh check
 │   ├── template_fill.py       # Generic fill-the-blank generator
 │   ├── onboard.py             # Blanks → draft profile / forms / inventory
 │   ├── docx_utils.py          # Shared DOCX helpers
@@ -328,13 +353,13 @@ No. It never submits, approves, or skips anything. It fills in the paperwork the
 For KFSYSCC, all 11 categories: new case (新案), re-review (複審), amendment (修正案), continuing review (期中審查), closure (結案), SAE (嚴重不良反應), IB update, project import, suspension, appeal (申覆), and other forms. That's 43 forms in total.
 
 **Will the forms look right on Windows and Mac?**
-Yes. Submit the generated PDF, which has fonts embedded. `make validate` checks paper size, official margins, and the institution's form font (KFSYSCC: 標楷體 / DFKai-SB) against the official blank templates, and it has to report 0 errors before you submit.
+Yes. Submit the generated PDF, which has fonts embedded. `irbh validate` checks paper size, official margins, and the institution's form font (KFSYSCC: 標楷體 / DFKai-SB) against the official blank templates, and it has to report 0 errors before you submit.
 
 **Can I use it for another hospital's IRB?**
-Yes, and that is what the design is for. Put your committee's blank forms in `templates/<id>/` and run `make onboard INST=<id>`. Then finish the drafted `institutions/<id>/profile.toml` and `forms.py`. Most forms need only a `label → config field` map, because the engine fills the official blank itself. See [docs/ONBOARDING.md](docs/ONBOARDING.md).
+Yes, and that is what the design is for. Put your committee's blank forms in `templates/<id>/` and run `irbh onboard <id>`. Then finish the drafted `institutions/<id>/profile.toml` and `forms.py`. Most forms need only a `label → config field` map, because the engine fills the official blank itself. See [docs/ONBOARDING.md](https://github.com/htlin222/irb-in-hurry/blob/main/docs/ONBOARDING.md).
 
 **Does it work with AI assistants?**
-Yes. It includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that can classify your study from a proposal, draft `config.toml` and `中文計畫摘要.md`, and walk you through the remaining manual steps.
+Yes. It includes a [Claude Code skill](https://github.com/htlin222/irb-in-hurry/blob/main/.claude/skills/irb/SKILL.md) that can classify your study from a proposal, draft `config.toml` and `中文計畫摘要.md`, and walk you through the remaining manual steps.
 
 ## References
 
@@ -346,7 +371,7 @@ Yes. It includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that can cla
 
 ## License
 
-MIT. Free to use, fork, and adapt for your own institution's IRB. PRs that add an `institutions/<id>/` pack are welcome.
+MIT. Free to use, fork, and adapt for your own institution's IRB. PRs that add an institution pack are welcome, and a pack can also ship as its own package ([how](https://github.com/htlin222/irb-in-hurry/blob/main/docs/ONBOARDING.md#8-share-it-optional)).
 
 ---
 

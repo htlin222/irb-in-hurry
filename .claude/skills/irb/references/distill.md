@@ -15,10 +15,10 @@ Put long prose in Markdown, never in TOML strings. A section made only of `-` / 
 ## Workflow
 
 1. **Save raw input** to `raw/` with a descriptive filename (e.g., `raw/proposal_20260330.md`)
-2. **Extract structured fields** into `config.toml`, people into `cv.toml`, and proposal prose into `中文計畫摘要.md` (to start from a template instead, `make init EXAMPLE=tdxd-her2low` copies an example from `examples/`)
-3. **Run `make check`** to resolve `@` references and validate required fields
+2. **Extract structured fields** into `config.toml`, people into `cv.toml`, and proposal prose into `中文計畫摘要.md` (to start from a template instead, `irbh init tdxd-her2low` copies a bundled example; `irbh init` lists them)
+3. **Run `irbh check`** to resolve `@` references and validate required fields
 4. **Ask user to confirm** any uncertain fields before generating forms
-5. **Proceed** with `make all` + `make review`
+5. **Proceed** with `irbh all` + `irbh review`
 
 ## Extraction Rules
 
@@ -103,7 +103,7 @@ Read the user's text and map to config fields (dotted names below are TOML table
 | 不良反應, SAE, adverse event | `sae` |
 | Default (no keywords) | `new` |
 
-Keep `phase = "new"` as the default in `config.toml`; for a later phase, run `make <phase>` (e.g. `make closure` = `make all PHASE=closure`) instead of editing the file.
+Keep `phase = "new"` as the default in `config.toml`; for a later phase, run `irbh <phase>` (e.g. `irbh closure` = `irbh all --phase closure`) instead of editing the file.
 
 ## What to Do When Information is Missing
 
@@ -177,4 +177,4 @@ Then Claude should:
 1. Generate a proper Chinese + English title from the description
 2. Ask for IRB number and study period dates
 3. Fill remaining fields with defaults
-4. Write `config.toml`, `cv.toml`, `中文計畫摘要.md`, run `make check`, then `make all`
+4. Write `config.toml`, `cv.toml`, `中文計畫摘要.md`, run `irbh check`, then `irbh all`

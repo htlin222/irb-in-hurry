@@ -5,16 +5,16 @@ import os
 import pytest
 from docx import Document
 
-from scripts import generate_all
-from scripts.config import load_config
-from scripts.form_selector import FORM_REGISTRY, PHASE_FORMS, get_generator, select_forms
+from irb_in_hurry import generate_all
+from irb_in_hurry.config import load_config
+from irb_in_hurry.form_selector import FORM_REGISTRY, PHASE_FORMS, get_generator, select_forms
 
-FIXTURES = ["config.toml"] + sorted(glob.glob("examples/*/config.toml"))
+FIXTURES = ["config.toml"] + sorted(glob.glob("irb_in_hurry/examples/*/config.toml"))
 
 
 @pytest.fixture
 def retro_config():
-    return load_config("examples/gcsf-retrospective/config.toml")
+    return load_config("irb_in_hurry/examples/gcsf-retrospective/config.toml")
 
 
 @pytest.fixture
@@ -90,7 +90,7 @@ def test_docx_contains_pi_name(retro_config, output_dir):
 
 def test_checklist_generation(retro_config, tmp_path):
     """Verify checklist.md is generated correctly."""
-    from scripts.checklist import generate_checklist
+    from irb_in_hurry.checklist import generate_checklist
 
     results = [
         ("SF001", "新案審查送審資料表", "/fake/path.docx", "generated"),
@@ -112,7 +112,7 @@ def test_checklist_generation(retro_config, tmp_path):
 
 def test_config_validation():
     """Verify config loads without error."""
-    config = load_config("examples/gcsf-retrospective/config.toml")
+    config = load_config("irb_in_hurry/examples/gcsf-retrospective/config.toml")
     assert config["study"]["irb_no"] == "20250801A"
     assert config["pi"]["name"] == "林協霆"
     assert config["subjects"]["consent_waiver"] is True
@@ -122,9 +122,9 @@ def test_config_validation():
 
 def test_proposal_summary_uses_config_text(output_dir):
     """proposal.* text fills 中文計畫摘要; absent keys keep the placeholder."""
-    from scripts.generators.proposal import generate_proposal_summary
+    from irb_in_hurry.generators.proposal import generate_proposal_summary
 
-    config = load_config("examples/tdxd-her2low/config.toml")
+    config = load_config("irb_in_hurry/examples/tdxd-her2low/config.toml")
     text = "\n".join(p.text for p in Document(
         generate_proposal_summary(config, output_dir)).paragraphs)
     assert "DESTINY-Breast04" in text

@@ -1,17 +1,17 @@
 <p align="center">
-  <img src="docs/assets/banner.svg" alt="IRB-in-Hurry — 不綁定機構的 IRB 送審表單自動產生工具：幾個純文字檔、一行指令、所有官方表單" width="100%">
+  <img src="https://raw.githubusercontent.com/htlin222/irb-in-hurry/main/docs/assets/banner.svg" alt="IRB-in-Hurry — 不綁定機構的 IRB 送審表單自動產生工具：幾個純文字檔、一行指令、所有官方表單" width="100%">
 </p>
 
 # IRB-in-Hurry：通用 IRB 送審表單自動產生器
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![Tests](https://img.shields.io/badge/tests-pytest-brightgreen.svg)](#測試)
 [![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#表單涵蓋範圍)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](#授權條款)
 
-不綁定特定機構的 IRB（人體試驗委員會）送審文件自動化產生工具。所有機構相關設定（院名、IRB 編號欄名、送件信箱、紙張、邊界、字型、表單與送審路徑）都放在 `institutions/<id>/`，程式本身沒有寫死任何院所。內建完整的[和信治癌中心醫院](https://www.kfsyscc.org/)表單包（43 份）作為參考實作。
+不綁定特定機構的 IRB（人體試驗委員會）送審文件自動化產生工具。所有機構相關設定（院名、IRB 編號欄名、送件信箱、紙張、邊界、字型、表單與送審路徑）都放在機構設定包（`profile.toml` + `forms.py`），程式本身沒有寫死任何院所。內建完整的[和信治癌中心醫院](https://www.kfsyscc.org/)表單包（43 份）作為參考實作。
 
-用純文字寫下研究資料（`config.toml` 放結構化資料、`cv.toml` 放研究團隊、`中文計畫摘要.md` 放計畫內容），執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。要用在自己的醫院？放進貴院的空白表單，執行 `make onboard`（見[導入指南](docs/ONBOARDING.md)）。
+用純文字寫下研究資料（`config.toml` 放結構化資料、`cv.toml` 放研究團隊、`中文計畫摘要.md` 放計畫內容），執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。要用在自己的醫院？放進貴院的空白表單，執行 `irbh onboard`（見[導入指南](docs/ONBOARDING.md)）。
 
 [English README](README.md)
 
@@ -37,8 +37,8 @@
 
 ## 功能特色
 
-- **不綁定機構**：院名、送件方式、版面、字型、表單路徑皆由 `institutions/<id>/` 設定
-- **帶入自己的表單**：`make onboard INST=<id>` 讀取貴院空白 DOCX，自動草擬機構設定、欄位對應與表單清冊
+- **不綁定機構**：院名、送件方式、版面、字型、表單路徑皆由機構設定包設定
+- **帶入自己的表單**：`irbh onboard <id>` 讀取貴院空白 DOCX，自動草擬機構設定、欄位對應與表單清冊
 - **直接填寫官方空白表單**：依欄位標籤填值、□→■，版面與原表單完全一致
 - **涵蓋 11 類 IRB 審查**（和信參考表單包）：新案、修正案、複審、期中、結案、嚴重不良反應、主持人手冊、專案進口、其他、暫停/終止、申覆
 - **43 個表單產生器**：依研究類型與送審階段自動選取所需表單
@@ -53,10 +53,10 @@
 
 ```bash
 mkdir -p templates/myhosp && cp ~/Downloads/irb-forms/*.docx templates/myhosp/
-make onboard INST=myhosp        # → institutions/myhosp/{profile.toml, forms.py, form_inventory.md}
+irbh onboard myhosp             # → institutions/myhosp/{profile.toml, forms.py, form_inventory.md}
 # 完成 TODO（院名、信箱、欄位對應、送審階段）
 # config.toml 頂層（第一個 [table] 之前）設定 institution = "myhosp"
-make templates && make all      # 產生 → PDF → 版面檢查（0 錯誤）→ 儀表板
+irbh templates && irbh all      # 產生 → PDF → 版面檢查（0 錯誤）→ 儀表板
 ```
 
 - 逐步導入指南：[docs/ONBOARDING.md](docs/ONBOARDING.md)
@@ -84,44 +84,62 @@ make templates && make all      # 產生 → PDF → 版面檢查（0 錯誤）�
 
 ## 快速開始
 
-```bash
-# 1. 複製並安裝
-git clone https://github.com/htlin222/irb-in-hurry.git
-cd irb-in-hurry
-make setup
+IRB-in-Hurry 是一個 Python 套件，只有一個指令 `irbh`。用 [uv](https://docs.astral.sh/uv/) 安裝一次，之後每個研究各放一個資料夾：
 
-# 2. 從範例開始（或直接編輯 config.toml / cv.toml / 中文計畫摘要.md）
-make init EXAMPLE=tdxd-her2low      # HER2 低表現 T-DXd vs 化療 PSM，含完整中文計畫摘要
-#   make init EXAMPLE=gcsf-retrospective FORCE=1   # 亦可測試結案流程
-make check                          # 解析 @引用、檢查必填欄位
+```bash
+# 1. 安裝（`irbh` 會加入 PATH；日後用 `uv tool upgrade irb-in-hurry` 更新）
+uv tool install irb-in-hurry
+#   尚未上 PyPI／想用最新 main：
+#   uv tool install git+https://github.com/htlin222/irb-in-hurry
+
+# 2. 從範例建立研究資料夾（或自己寫 config.toml / cv.toml / 中文計畫摘要.md）
+mkdir my-study && cd my-study
+irbh init tdxd-her2low              # HER2 低表現 T-DXd vs 化療 PSM（`irbh init` 列出所有範例）
+irbh doctor                         # 檢查 LibreOffice、poppler、字型、設定檔、空白表單
 
 # 3. 一鍵產生所有文件
-make all
+irbh templates                      # 只需一次：快取機構官方空白表單
+irbh all                            # DOCX → PDF → 版面檢查 → 儀表板
 ```
+
+`irbh init` 也會把 Claude Code 技能複製到 `.claude/skills/irb/`，用 Claude Code 開啟這個資料夾，直接用口語描述研究即可。完全不安裝：`uvx --from irb-in-hurry irbh all`。
 
 ## 使用方式
 
-### Makefile 指令
+### `irbh` 指令
+
+在研究資料夾內執行（或用 `irbh -C 路徑 …` 指定）。
 
 | 指令 | 說明 |
 |------|------|
-| `make all` | 產生 DOCX + PDF + 排版檢查 + 儀表板 |
-| `make check` | 解析 `config.toml` 的 `@引用` 並檢查必填欄位 |
-| `make init EXAMPLE=…` | 將 `examples/` 的範例研究複製到根目錄 |
-| `make templates` | 快取機構官方空白表單（只需一次） |
-| `make onboard INST=<id>` | 由 `templates/<id>/` 的空白表單草擬新機構設定 |
-| `make validate` | 排版／字型安全檢查（紙張、邊界、機構字型、Win/Mac 通用、對照官方空白表單） |
-| `make generate` | 僅產生 DOCX 表單 |
-| `make pdf` | 轉換為 PDF + PNG 預覽 |
-| `make dashboard` | 顯示送審狀態 |
-| `make checklist` | 檢視 ■/□ 清單 |
-| `make review` | 模擬 IRB 審查委員檢閱產生的表單 |
-| `make test` | 執行測試 |
-| `make lint` | ruff 程式碼檢查（`make format` 自動修正） |
-| `make clean` | 清除產生的檔案 |
-| `make closure` | 即 `make all PHASE=closure`；任何階段皆可（`new`、`amendment`、`continuing`、`sae`…），不會改寫 `config.toml` |
-| `make review` | 模擬 IRB 審查委員意見 |
-| `make set-phase PHASE=closure` | 將階段寫入 `config.toml`（只改 `phase =` 那一行，保留註解） |
+| `irbh all` | 產生 DOCX + PDF + 排版檢查 + 儀表板 |
+| `irbh closure` | 即 `irbh all --phase closure`；任何階段皆可（`new`、`amendment`、`continuing`、`sae`…），不會改寫 `config.toml` |
+| `irbh check` | 解析 `config.toml` 的 `@引用` 並檢查必填欄位（`--json` 輸出結果） |
+| `irbh init [範例]` | 從內建範例建立研究（不給名稱則列出）＋安裝 Claude Code 技能 |
+| `irbh templates` | 快取機構官方空白表單（只需一次；設定 `$IRB_TEMPLATES` 可跨研究共用） |
+| `irbh onboard <id>` | 由 `templates/<id>/` 的空白表單草擬新機構設定包 |
+| `irbh institutions` | 列出機構設定包（本地、已安裝、內建）與目前使用中的 |
+| `irbh validate` | 排版／字型安全檢查（紙張、邊界、機構字型、Win/Mac 通用、對照官方空白表單） |
+| `irbh generate` | 僅產生 DOCX 表單 |
+| `irbh pdf` | 轉換為 PDF + PNG 預覽 |
+| `irbh dashboard` | 顯示送審狀態 |
+| `irbh review` | 模擬 IRB 審查委員意見 |
+| `irbh set-phase closure` | 將階段寫入 `config.toml`（只改 `phase =` 那一行，保留註解） |
+| `irbh skill` | 重新安裝 Claude Code 技能到 `.claude/skills/irb/` |
+| `irbh doctor` | 檢查 LibreOffice、poppler、表單字型、設定檔與空白表單快取 |
+
+`--phase` 預設讀 `$PHASE`，所以 `PHASE=closure irbh all` 也可以。
+
+### 從原始碼開發
+
+```bash
+git clone https://github.com/htlin222/irb-in-hurry.git && cd irb-in-hurry
+make setup                                    # uv sync（把 `irbh` 裝進 .venv）
+make init EXAMPLE=gcsf-retrospective FORCE=1  # = uv run irbh init gcsf-retrospective --force
+make all                                      # = uv run irbh all；`make closure` = make all PHASE=closure
+make test lint                                # pytest + ruff，與 CI 相同
+make build                                    # 產生 sdist + wheel 到 dist/
+```
 
 ### 工作流程
 
@@ -138,9 +156,9 @@ output/*.docx + templates/<id>/ (官方空白表單) → validate_layout.py
 ```
 
 1. **編輯純文字來源** — `config.toml`（IRB 編號、計畫名稱、日期、研究類型）、
-   `cv.toml`（主持人／共同主持人）、`中文計畫摘要.md`（背景、目的、方法…）；執行 `make check`
-2. **`make all`** — 產生 DOCX、轉換 PDF、顯示儀表板
-3. **排版安全檢查** — `make validate` 必須 0 錯誤；查看 `output/layout_report.md`
+   `cv.toml`（主持人／共同主持人）、`中文計畫摘要.md`（背景、目的、方法…）；執行 `irbh check`
+2. **`irbh all`** — 產生 DOCX、轉換 PDF、顯示儀表板
+3. **排版安全檢查** — `irbh validate` 必須 0 錯誤；查看 `output/layout_report.md`
    與 `output/preview/compare/*.png`（左：官方空白表單，右：產生結果）
 4. **以 PDF 交件** — 字型已嵌入，Windows 與 Mac 顯示一致；IRB 需修改時才附 DOCX
 5. **完成手動步驟** — 簽名、附上計畫書、寄至機構設定中的送件信箱（和信：irb@kfsyscc.org）

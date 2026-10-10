@@ -57,7 +57,7 @@ retention_years      = 7           # Years to retain after closure
 authorized_personnel = "PI name"   # Who has data access
 ```
 
-Generate with `make closure` (= `make all PHASE=closure`); `config.toml` is not edited.
+Generate with `irbh closure` (= `irbh all --phase closure`); `config.toml` is not edited.
 
 ## Retrospective Study Closure
 

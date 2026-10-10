@@ -1,12 +1,71 @@
 [project]
 name = "irb-in-hurry"
-version = "1.1.0"
+version = "2.0.0"
 description = "Institution-agnostic IRB form pipeline: TOML → official DOCX blanks → PDF, with a layout gate. Ships the KFSYSCC form pack (43 forms)."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Hsiehting Lin" }]
 requires-python = ">=3.11"  # tomllib
+keywords = ["irb", "ethics-review", "human-subjects-research", "docx", "form-filling", "kfsyscc"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: Chinese (Traditional)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
 dependencies = [
     "python-docx",
     "pdf2image",
     "pillow",
+]
+
+[project.urls]
+Homepage = "https://github.com/htlin222/irb-in-hurry"
+Documentation = "https://github.com/htlin222/irb-in-hurry/blob/main/docs/ONBOARDING.md"
+Issues = "https://github.com/htlin222/irb-in-hurry/issues"
+
+[project.scripts]
+irbh = "irb_in_hurry.cli:main"
+irb-in-hurry = "irb_in_hurry.cli:main"
+
+# Institution packs. A third-party pack registers its own package here:
+#   [project.entry-points."irb_in_hurry.institutions"]
+#   myhosp = "irb_pack_myhosp"        # package folder holding profile.toml + forms.py
+[project.entry-points."irb_in_hurry.institutions"]
+kfsyscc = "irb_in_hurry.institutions.kfsyscc"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["irb_in_hurry"]
+
+# The Claude Code skill ships inside the wheel so `irbh skill` can install it into a study folder.
+[tool.hatch.build.targets.wheel.force-include]
+".claude/skills/irb" = "irb_in_hurry/skill"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/irb_in_hurry",
+    "/.claude/skills/irb",
+    "/tests",
+    "/docs",
+    "/README.md",
+    "/README.zh-TW.md",
+    "/LICENSE",
+    "/CHANGELOG.md",
+    "/Makefile",
 ]
 
 [dependency-groups]
@@ -30,4 +89,4 @@ select = ["E", "F", "W", "B", "I"]
 ignore = ["E501"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["scripts"]
+known-first-party = ["irb_in_hurry"]

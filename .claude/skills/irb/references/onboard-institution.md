@@ -14,13 +14,13 @@ with the user once.
 
 - If the user gives files or a folder, copy them there unchanged.
 - If the user gives a forms webpage, set `templates.index_url` (+ `index_range` if paged)
-  in the profile after step 2 and run `make templates`. Google Drive links are handled.
+  in the profile after step 2 and run `irbh templates`. Google Drive links are handled.
 - If a form exists only as PDF or scan, note it. It will need a rebuild generator (step 6).
 
 ## 2. Scaffold and read
 
 ```bash
-make onboard INST=<id>
+irbh onboard <id>
 ```
 
 Then **read `institutions/<id>/form_inventory.md` in full** before editing anything.
@@ -64,21 +64,21 @@ missing form at submission.
 Rebuild a form instead of filling it when it has text boxes or frames, content
 controls, legacy form fields, a scanned or PDF-only original, or mostly generated
 prose. Write `institutions/<id>/generators.py` with `init_doc()` and
-`add_header()`, and the other `scripts.docx_utils` helpers. Read `institution()`
+`add_header()`, and the other `irb_in_hurry.docx_utils` helpers. Read `institution()`
 for every name or label, and never hardcode them. Register it with its full module path.
 
 ## 7. Run and verify
 
 ```bash
 # config.toml → institution = "<id>"
-make templates && make all
+irbh templates && irbh all
 ```
 
 - Fix every `⚠ <form>: labels not found in blank` line.
-- `make validate` must show **0 errors**. Explain warnings to the user.
+- `irbh validate` must show **0 errors**. Explain warnings to the user.
 - **Look at** `output/preview/compare/*.png` (blank on the left, generated on the right) for each form,
   and report anything misplaced.
-- Run `make test`.
+- In a checkout of the irb-in-hurry repo, run `make test`.
 
 ## 8. Hand-off
 
@@ -90,5 +90,5 @@ Tell the user which forms are fully automatic, which have manual fields left
 
 - Don't edit the blanks in `templates/<id>/`. They are the gate's ground truth.
 - Don't copy KFSYSCC routing or form ids to another institution.
-- Don't touch `institutions/kfsyscc/` or `scripts/generators/` while onboarding someone
+- Don't touch `irb_in_hurry/institutions/kfsyscc/` or `irb_in_hurry/generators/` while onboarding someone
   else. They are the reference pack.
