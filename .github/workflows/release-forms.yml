@@ -1,0 +1,131 @@
+name: Forms release
+
+# Rebuilds the submission package from the SSOT (config.toml + the files it
+# @-references + the institution pack) and publishes it as a GitHub release,
+# one per commit. Nothing is published unless the layout gate (make validate)
+# passes with 0 errors.
+#
+# PDFs are rendered with AR PL UKai TW standing in for 標楷體 (scripts/fonts.conf):
+# same metrics and page breaks, but treat them as review copies and re-run
+# `make all` on Windows/macOS for the copy you actually submit.
+#
+# Releases of a public repo are public: run this from a private fork when
+# config.toml holds an unpublished protocol or real CVs.
+
+on:
+  push:
+    branches: [main]
+    # config.toml can @-reference any file, so rebuild on everything except
+    # paths that cannot feed a form.
+    paths-ignore:
+      - "demo/**"
+      - "docs/**"
+      - "examples/**"
+      - "tests/**"
+      - ".claude/**"
+      - "README*.md"
+      - "CLAUDE.md"
+      - "PROMPTS.md"
+      - ".github/workflows/ci.yml"
+      - ".github/workflows/pages.yml"
+      - ".github/workflows/release-demo.yml"
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Phase to build (empty = phase in config.toml)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: forms-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      PHASE: ${{ inputs.phase }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - run: uv sync --locked
+      - name: Install LibreOffice, Kai font, poppler
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libreoffice-writer fonts-arphic-ukai poppler-utils
+
+      - id: info
+        name: Resolve institution and phase
+        run: |
+          uv run python - <<'EOF' >> "$GITHUB_OUTPUT"
+          import os
+          from scripts.config import load_config
+          from scripts.institution import activate
+          cfg = load_config("config.toml", phase=os.environ.get("PHASE") or None)
+          print(f"inst={activate(cfg).id}")
+          print(f"phase={cfg['phase']}")
+          EOF
+          echo "sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # The official blanks are the layout gate's ground truth. Fetch them fresh
+      # each run; if the institution's site is down, fall back to the last copy.
+      - uses: actions/cache/restore@v4
+        with:
+          path: templates
+          key: templates-${{ steps.info.outputs.inst }}-${{ github.run_id }}
+          restore-keys: templates-${{ steps.info.outputs.inst }}-
+      - name: Fetch blank forms
+        run: |
+          make templates || {
+            test -s "templates/${{ steps.info.outputs.inst }}/index.json" ||
+              { echo "::error::Could not fetch blank forms and no cached copy"; exit 1; }
+            echo "::warning::Blank-form fetch failed; using the cached copy"
+          }
+      - uses: actions/cache/save@v4
+        with:
+          path: templates
+          key: templates-${{ steps.info.outputs.inst }}-${{ github.run_id }}
+
+      - name: Generate, convert, layout gate
+        run: make all
+
+      - name: Package
+        env:
+          INST: ${{ steps.info.outputs.inst }}
+          PHASE_ID: ${{ steps.info.outputs.phase }}
+          SHA: ${{ steps.info.outputs.sha }}
+        run: |
+          # Asset names must be ASCII: GitHub rewrites anything else to "."
+          # (file names inside the zip keep their Chinese).
+          ZIP="${INST}_${PHASE_ID}_${SHA}.zip"
+          (cd output && zip -q -r "$RUNNER_TEMP/$ZIP" . -x 'preview/*')
+          zip -q -j "$RUNNER_TEMP/$ZIP" checklist.md
+          echo "ZIP=$RUNNER_TEMP/$ZIP" >> "$GITHUB_ENV"
+          {
+            echo "由 \`${SHA}\` 的 config.toml 自動產生（${INST}，phase: \`${PHASE_ID}\`）。"
+            echo
+            echo "> PDF 以 AR PL UKai TW 代替標楷體轉檔，版面與分頁相同；正式送審請在 Windows/macOS 重跑 \`make all\`。"
+            echo
+            cat output/layout_report.md
+            echo
+            cat checklist.md
+          } > "$RUNNER_TEMP/notes.md"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: forms-${{ steps.info.outputs.inst }}-${{ steps.info.outputs.phase }}-${{ steps.info.outputs.sha }}
+          TITLE: "送審文件：${{ steps.info.outputs.inst }} ${{ steps.info.outputs.phase }}（${{ steps.info.outputs.sha }}）"
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP" --clobber
+            gh release edit "$TAG" --notes-file "$RUNNER_TEMP/notes.md"
+          else
+            gh release create "$TAG" "$ZIP" --target "$GITHUB_SHA" \
+              --title "$TITLE" --notes-file "$RUNNER_TEMP/notes.md"
+          fi
