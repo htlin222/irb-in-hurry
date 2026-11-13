@@ -41,6 +41,20 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --title "$GITHUB_REF_NAME" --generate-notes
+      # A release created with GITHUB_TOKEN does not trigger `release: published`
+      # workflows, so attach the architecture diagram here. The job has no
+      # checkout, so fetch the two SVGs at the tagged commit via the API.
+      - name: Attach architecture diagram
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p assets
+          for f in architecture.svg architecture-dark.svg; do
+            gh api "repos/$GITHUB_REPOSITORY/contents/docs/$f?ref=$GITHUB_SHA" \
+              -H "Accept: application/vnd.github.raw" > "assets/$f" || { rm -f "assets/$f"; continue; }
+          done
+          ls assets/*.svg >/dev/null 2>&1 || { echo "::notice::No architecture diagram at this tag"; exit 0; }
+          gh release upload "$GITHUB_REF_NAME" assets/*.svg --repo "$GITHUB_REPOSITORY" --clobber
 
   pypi:
     needs: build
