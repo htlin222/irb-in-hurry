@@ -69,6 +69,13 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 
 ---
 
+## Architecture
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
+  <img alt="irb-in-hurry architecture" src="docs/architecture.svg">
+</picture>
+
 ## Features
 
 - **Institution-agnostic**: committee names, IRB-number label, submission address, paper, margins, font and form routing live in an institution pack (`profile.toml` + `forms.py`). The pipeline code has no institution literals

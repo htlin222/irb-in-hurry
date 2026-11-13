@@ -35,6 +35,13 @@
 
 ---
 
+## 架構
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
+  <img alt="irb-in-hurry architecture" src="docs/architecture.svg">
+</picture>
+
 ## 功能特色
 
 - **不綁定機構**：院名、送件方式、版面、字型、表單路徑皆由機構設定包設定
