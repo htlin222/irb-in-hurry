@@ -37,10 +37,11 @@
 
 ## 架構
 
-<picture>
+<p align="center"><picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
-  <img alt="irb-in-hurry architecture" src="docs/architecture.svg">
-</picture>
+  <source media="(prefers-color-scheme: light)" srcset="docs/architecture.svg">
+  <img alt="irb-in-hurry architecture" src="docs/architecture.svg" width="100%">
+</picture></p>
 
 ## 功能特色
 

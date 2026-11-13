@@ -1,39 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1163 574" width="1163" height="574" font-family="Inter, -apple-system, 'Segoe UI', Helvetica, Arial, 'Noto Sans TC', sans-serif" role="img" aria-label="irb-in-hurry architecture">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1163 574" width="1163" height="574" preserveAspectRatio="xMidYMid meet" font-family="Inter, -apple-system, 'Segoe UI', Helvetica, Arial, 'Noto Sans TC', sans-serif" role="img" aria-label="irb-in-hurry architecture">
 <title>irb-in-hurry architecture</title>
-<rect width="100%" height="100%" fill="#0d1117"/>
-<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" stroke="#c9d1d9" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
-<rect x="287" y="140.0" width="848" height="278" rx="18" fill="none" stroke="#c9d1d9" stroke-width="1.2" stroke-dasharray="6 6"/>
-<text x="309" y="171.0" font-size="19" font-weight="600" fill="#e6edf3">irbh CLI</text>
-<path d="M254.0,226.0 L313.0,226.0" fill="none" stroke="#c9d1d9" stroke-width="1.5" marker-end="url(#a)"/>
-<path d="M539.0,226.0 L598.0,226.0" fill="none" stroke="#c9d1d9" stroke-width="1.5" marker-end="url(#a)"/>
-<path d="M598.0,66.0 L426.0,66.0 L426.0,188.0" fill="none" stroke="#c9d1d9" stroke-width="1.5" marker-end="url(#a)"/>
-<path d="M711.0,104.0 L711.0,188.0" fill="none" stroke="#c9d1d9" stroke-width="1.5" marker-end="url(#a)"/>
-<path d="M824.0,226.0 L883.0,226.0" fill="none" stroke="#c9d1d9" stroke-width="1.5" marker-end="url(#a)"/>
-<path d="M996.0,264.0 L996.0,316.0" fill="none" stroke="#c9d1d9" stroke-width="1.5" marker-end="url(#a)"/>
-<path d="M883.0,354.0 L824.0,354.0" fill="none" stroke="#c9d1d9" stroke-width="1.5" marker-end="url(#a)"/>
-<path d="M711.0,392.0 L711.0,469.6" fill="none" stroke="#c9d1d9" stroke-width="1.5" marker-end="url(#a)"/>
-<rect x="28" y="188.0" width="226" height="76" rx="10" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
-<text x="141.0" y="222.0" font-size="19.0" font-weight="600" text-anchor="middle" fill="#e6edf3">Your study</text>
-<text x="141.0" y="245.0" font-size="10.5" text-anchor="middle" fill="#8b949e">config.toml · cv.toml · 中文計畫摘要.md</text>
-<rect x="313" y="188.0" width="226" height="76" rx="10" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
-<text x="426.0" y="222.0" font-size="19.0" font-weight="600" text-anchor="middle" fill="#e6edf3">Router</text>
-<text x="426.0" y="245.0" font-size="14.0" text-anchor="middle" fill="#8b949e">study type × phase → forms</text>
-<rect x="598" y="188.0" width="226" height="76" rx="10" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
-<text x="711.0" y="222.0" font-size="19.0" font-weight="600" text-anchor="middle" fill="#e6edf3">Fill engine</text>
-<text x="711.0" y="245.0" font-size="14.0" text-anchor="middle" fill="#8b949e">official blank DOCX · □→■</text>
-<rect x="883" y="188.0" width="226" height="76" rx="10" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
-<text x="996.0" y="222.0" font-size="19.0" font-weight="600" text-anchor="middle" fill="#e6edf3">Export</text>
-<text x="996.0" y="245.0" font-size="14.0" text-anchor="middle" fill="#8b949e">PDF · LibreOffice</text>
-<rect x="598" y="28.0" width="226" height="76" rx="10" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
-<text x="711.0" y="62.0" font-size="19.0" font-weight="600" text-anchor="middle" fill="#e6edf3">Institution pack</text>
-<text x="711.0" y="85.0" font-size="14.0" text-anchor="middle" fill="#8b949e">profile.toml · forms.py</text>
-<rect x="883" y="316.0" width="226" height="76" rx="10" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
-<text x="996.0" y="350.0" font-size="19.0" font-weight="600" text-anchor="middle" fill="#e6edf3">Layout gate</text>
-<text x="996.0" y="373.0" font-size="13.3" text-anchor="middle" fill="#8b949e">vs official blanks · Win/Mac</text>
-<rect x="598" y="316.0" width="226" height="76" rx="10" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
-<text x="711.0" y="350.0" font-size="19.0" font-weight="600" text-anchor="middle" fill="#e6edf3">Checklist</text>
-<text x="711.0" y="373.0" font-size="14.0" text-anchor="middle" fill="#8b949e">■/□ · dashboard</text>
-<rect x="598" y="469.6" width="226" height="76" rx="10" fill="#0d1117" stroke="#c9d1d9" stroke-width="1.5"/>
-<text x="711.0" y="503.6" font-size="19.0" font-weight="600" text-anchor="middle" fill="#e6edf3">IRB office</text>
-<text x="711.0" y="526.6" font-size="14.0" text-anchor="middle" fill="#8b949e">submission packet</text>
+<style>.fg{fill:#e6edf3}.sub{fill:#8b949e}.ln{stroke:#c9d1d9}</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M1,1 L9,5 L1,9" fill="none" class="ln" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+<rect x="287" y="140.0" width="848" height="278" rx="18" fill="none" class="ln" stroke-width="1.2" stroke-dasharray="6 6"/>
+<text x="309" y="171.0" font-size="19" font-weight="600" class="fg">irbh CLI</text>
+<path d="M254.0,226.0 L313.0,226.0" fill="none" class="ln" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M539.0,226.0 L598.0,226.0" fill="none" class="ln" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M598.0,66.0 L426.0,66.0 L426.0,188.0" fill="none" class="ln" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M711.0,104.0 L711.0,188.0" fill="none" class="ln" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M824.0,226.0 L883.0,226.0" fill="none" class="ln" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M996.0,264.0 L996.0,316.0" fill="none" class="ln" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M883.0,354.0 L824.0,354.0" fill="none" class="ln" stroke-width="1.5" marker-end="url(#a)"/>
+<path d="M711.0,392.0 L711.0,469.6" fill="none" class="ln" stroke-width="1.5" marker-end="url(#a)"/>
+<rect x="28" y="188.0" width="226" height="76" rx="10" fill="none" class="ln" stroke-width="1.5"/>
+<text x="141.0" y="222.0" font-size="19.0" font-weight="600" text-anchor="middle" class="fg">Your study</text>
+<text x="141.0" y="245.0" font-size="10.5" text-anchor="middle" class="sub">config.toml · cv.toml · 中文計畫摘要.md</text>
+<rect x="313" y="188.0" width="226" height="76" rx="10" fill="none" class="ln" stroke-width="1.5"/>
+<text x="426.0" y="222.0" font-size="19.0" font-weight="600" text-anchor="middle" class="fg">Router</text>
+<text x="426.0" y="245.0" font-size="14.0" text-anchor="middle" class="sub">study type × phase → forms</text>
+<rect x="598" y="188.0" width="226" height="76" rx="10" fill="none" class="ln" stroke-width="1.5"/>
+<text x="711.0" y="222.0" font-size="19.0" font-weight="600" text-anchor="middle" class="fg">Fill engine</text>
+<text x="711.0" y="245.0" font-size="14.0" text-anchor="middle" class="sub">official blank DOCX · □→■</text>
+<rect x="883" y="188.0" width="226" height="76" rx="10" fill="none" class="ln" stroke-width="1.5"/>
+<text x="996.0" y="222.0" font-size="19.0" font-weight="600" text-anchor="middle" class="fg">Export</text>
+<text x="996.0" y="245.0" font-size="14.0" text-anchor="middle" class="sub">PDF · LibreOffice</text>
+<rect x="598" y="28.0" width="226" height="76" rx="10" fill="none" class="ln" stroke-width="1.5"/>
+<text x="711.0" y="62.0" font-size="19.0" font-weight="600" text-anchor="middle" class="fg">Institution pack</text>
+<text x="711.0" y="85.0" font-size="14.0" text-anchor="middle" class="sub">profile.toml · forms.py</text>
+<rect x="883" y="316.0" width="226" height="76" rx="10" fill="none" class="ln" stroke-width="1.5"/>
+<text x="996.0" y="350.0" font-size="19.0" font-weight="600" text-anchor="middle" class="fg">Layout gate</text>
+<text x="996.0" y="373.0" font-size="13.3" text-anchor="middle" class="sub">vs official blanks · Win/Mac</text>
+<rect x="598" y="316.0" width="226" height="76" rx="10" fill="none" class="ln" stroke-width="1.5"/>
+<text x="711.0" y="350.0" font-size="19.0" font-weight="600" text-anchor="middle" class="fg">Checklist</text>
+<text x="711.0" y="373.0" font-size="14.0" text-anchor="middle" class="sub">■/□ · dashboard</text>
+<rect x="598" y="469.6" width="226" height="76" rx="10" fill="none" class="ln" stroke-width="1.5"/>
+<text x="711.0" y="503.6" font-size="19.0" font-weight="600" text-anchor="middle" class="fg">IRB office</text>
+<text x="711.0" y="526.6" font-size="14.0" text-anchor="middle" class="sub">submission packet</text>
 </svg>
