@@ -79,6 +79,10 @@ directly are filled with neutral defaults (`DEFAULTS` / `BOOL_FIELDS` in `irb_in
 | `drug_device` | bool | Drug or device trial | `false` |
 | `genetic` | bool | Involves genetic data | `false` |
 | `multicenter` | bool | Multi-center study | `false` |
+| `funding` | string | SF002 item 6 / SF094 經費來源 — the option text to check (default `不需補助`; e.g. `院內研究`) | `"不需補助"` |
+| `sponsor` | string | SF094 試驗委託者 (default `無`) | `"無"` |
+| `questionnaire` | bool | Uses questionnaires (SF001 item 10) | `false` |
+| `doc_version` / `doc_date` | string | 中文計畫摘要 footer 版本／日期 (defaults `1.0` / today) | `"1.0"`, `"2026/11/01"` |
 
 ## `pi` (required) — usually `pi = "@cv.toml#pi"`
 
@@ -89,6 +93,8 @@ directly are filled with neutral defaults (`DEFAULTS` / `BOOL_FIELDS` in `irb_in
 | `dept` | string | Department and title | `"腫瘤內科部／醫師"` |
 | `phone` | string | Contact phone | `"0920476278（院內分機1640）"` |
 | `email` | string | Contact email | `"htlin222@kfsyscc.org"` |
+| `training_hours` | int | SF002 「近6年內共___小時」 (left blank if absent) | `24` |
+| `conflict_of_interest` | bool | `true` leaves SF094's disclosure for hand-filling instead of checking 「無任何需揭露」 | `false` |
 
 ## `co_pi` (optional, list) — usually `co_pi = "@cv.toml#co_pi"`
 
@@ -99,6 +105,18 @@ Each `[[co_pi]]` entry in `cv.toml`:
 | `name` | string | Co-PI Chinese name |
 | `name_en` | string | Co-PI English name |
 | `dept` | string | Department and title |
+| `phone`, `email`, `training_hours`, `conflict_of_interest` | | as for `pi` |
+
+One SF002 row is filled per co-PI (the official row is cloned); the row is removed when
+there are none. Every team member (PI, co-PIs, `staff`) gets their own SF094.
+
+## `staff` (optional, list) — 研究人員, same fields as `co_pi`
+
+## `contact` / `supervisor` (optional tables)
+
+`contact` (SF002 聯絡人; default: the PI) takes `name`, `phone`, `email`.
+`supervisor` (SF002 總主持人／指導老師 row, removed when absent) takes the `pi` fields plus
+`role` = `總主持人` or `指導老師`.
 
 ## `dates` (required)
 
@@ -118,6 +136,10 @@ Each `[[co_pi]]` entry in `cv.toml`:
 | `consent_waiver` | bool | Waiver of informed consent | `true` |
 | `vulnerable_population` | bool | Includes vulnerable subjects | `false` |
 | `groups` | list | Subject groups with `name` and `n` | see below |
+| `population` | string | SF002 18(1) 受試者型態 | `"轉移性乳癌患者"` |
+| `age_range` | string | SF002 18(2) 年齡範圍 | `"20-90"` |
+| `waiver_criteria` | list | SF005 自評項目 answered 是 (others 否); default `[3, 4]` | `[3, 4]` |
+| `waiver_reason` | string | SF005 主持人說明 (default: generated retrospective rationale) | |
 
 ### `subjects.groups` (optional, list)
 
@@ -145,7 +167,9 @@ Full example: `irbh init tdxd-her2low` copies one (`irb_in_hurry/examples/tdxd-h
 | `variables` / `endpoints` | `資料收集項目` / `研究終點` | 七、研究方法 (retrospective) |
 | `methods` | `研究方法` | 七、研究方法 (prospective / trials) |
 | `statistics` | `統計分析` | 九、統計分析 |
-| `attachments` | `附件` | 十一、附件 (string or list) |
+| `adverse_events` | `副作用處理` | 八、副作用處理 |
+| `data_protection` | `研究參與者資料保護措施及安全監測計畫` / `資料保護措施` | 十、資料保護 (default: from `closure.data_safety`) |
+| `attachments` | `附件` / `附錄` | 十一、附錄 (string or list) |
 
 ## `closure` (when phase=closure)
 

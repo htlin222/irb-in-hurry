@@ -124,7 +124,7 @@ def cmd_pdf(args):
 def cmd_templates(args):
     from irb_in_hurry import fetch_templates
     _activate(args.config)
-    return fetch_templates.main(force=args.force) or 0
+    return fetch_templates.main(force=args.force or args.update, update=args.update) or 0
 
 
 def cmd_onboard(args):
@@ -234,7 +234,7 @@ def cmd_doctor(args):
                                  env=env).stdout.strip()
         exact = any(n in matched for n in names) or "Kai" in matched
         report(exact, "form font", f"{font} → {matched or '?'}" + ("" if exact else
-               " (PDF renders will substitute; install the font or fonts-arphic-ukai on Linux)"), required=False)
+               " (PDF renders will substitute; install the font, or fonts-arphic-ukai fonts-arphic-uming fonts-noto-cjk on Linux)"), required=False)
     else:
         report(True, "form font", f"{font} (fc-match unavailable; check Word shows {font})")
     if problems:
@@ -294,6 +294,8 @@ def build_parser():
 
     p = command("templates", cmd_templates, "cache the institution's official blank forms", config=True)
     p.add_argument("--force", action="store_true", help="re-download cached blanks")
+    p.add_argument("--update", action="store_true",
+                   help="re-download and report forms whose 版次/編修日期 changed")
 
     p = command("onboard", cmd_onboard, "draft institutions/<id>/ from the blank forms in templates/<id>/")
     p.add_argument("id")

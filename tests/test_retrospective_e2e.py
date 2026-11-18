@@ -7,6 +7,7 @@ from docx import Document
 
 from irb_in_hurry import generate_all
 from irb_in_hurry.config import load_config
+from irb_in_hurry.docx_utils import form_id_from_path
 from irb_in_hurry.form_selector import FORM_REGISTRY, PHASE_FORMS, get_generator, select_forms
 
 FIXTURES = ["config.toml"] + sorted(glob.glob("irb_in_hurry/examples/*/config.toml"))
@@ -57,7 +58,9 @@ def test_generate_all_every_fixture_and_phase(fixture, phase, tmp_path):
     out = tmp_path / "output"
     code = generate_all.main(fixture, str(out), phase=phase, checklist_path=str(tmp_path / "checklist.md"))
     assert code == 0
-    assert len(list(out.glob("*.docx"))) == len(select_forms(load_config(fixture) | {"phase": phase}))
+    # one file per form; forms filed per person (SF094) may add files of the same id
+    produced = {form_id_from_path(str(p)) for p in out.glob("*.docx")}
+    assert produced == {fid for fid, _ in select_forms(load_config(fixture) | {"phase": phase})}
 
 
 def test_new_case_generates_all_forms(retro_config, output_dir):

@@ -134,9 +134,16 @@ def pin_form_font(doc):
     _child(rpr_default, 'w:lang').set(qn('w:eastAsia'), current().font.get('lang', 'zh-TW'))
 
     for part in doc.part.package.iter_parts():
-        if str(part.partname) == '/word/fontTable.xml' and font.encode() not in part.blob:
-            part._blob = part.blob.replace(
-                b'</w:fonts>', _font_table_entry().encode('utf-8') + b'</w:fonts>')
+        if str(part.partname) != '/word/fontTable.xml':
+            continue
+        blob = part.blob.decode('utf-8')
+        # official blanks often declare the font without altName: replace that entry
+        entry = re.search(r'<w:font w:name="%s"(?:/>|>.*?</w:font>)' % re.escape(font), blob, re.S)
+        alt = current().font.get('aliases', [])
+        if entry and (not alt or alt[0] in entry.group(0)):
+            continue
+        blob = blob.replace(entry.group(0), '') if entry else blob
+        part._blob = blob.replace('</w:fonts>', _font_table_entry() + '</w:fonts>').encode('utf-8')
 
 
 def strip_theme_fonts(doc):

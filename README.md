@@ -162,7 +162,7 @@ Run them in the study folder (or point at one with `irbh -C path/to/study …`).
 | `irbh closure` | `irbh all --phase closure` — any phase works (`new`, `amendment`, `continuing`, `sae`, …); `config.toml` is never rewritten |
 | `irbh check` | Resolve `@references` in `config.toml` and validate required fields (`--json` prints the result) |
 | `irbh init [example]` | Start a study from a bundled example (no name: list them) + install the Claude Code skill |
-| `irbh templates` | Cache the institution's official blank forms (once; `$IRB_TEMPLATES` shares them across studies) |
+| `irbh templates` | Cache the institution's official blank forms (once; `$IRB_TEMPLATES` shares them across studies; `--update` re-downloads and lists forms whose 版次/編修日期 changed) |
 | `irbh onboard <id>` | Draft a new institution pack from its blanks in `templates/<id>/` |
 | `irbh institutions` | List institution packs (local, installed, bundled) and which is active |
 | `irbh validate` | Layout/font safety gate (paper, margins, form font, Win/Mac, vs official blank) |
@@ -282,7 +282,7 @@ Tests cover the config loader and `@references`, form selection, DOCX content, c
 
 - Python 3.11+ (TOML via the standard library's `tomllib`)
 - [python-docx](https://python-docx.readthedocs.io/) — DOCX generation
-- [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF conversion (`brew install --cask libreoffice`; Windows: `winget install TheDocumentFoundation.LibreOffice`; Linux: `apt install libreoffice-writer fonts-arphic-ukai`)
+- [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF conversion (`brew install --cask libreoffice`; Windows: `winget install TheDocumentFoundation.LibreOffice`; Linux: `apt install libreoffice-writer fonts-arphic-ukai fonts-arphic-uming fonts-noto-cjk`)
 - [poppler](https://poppler.freedesktop.org/) — PDF→PNG preview (`brew install poppler`)
 
 ## Claude Code Integration
@@ -321,9 +321,10 @@ irb-in-hurry/
 │   ├── set_phase.py           # Persist phase in config.toml, keeping comments
 │   ├── checklist.py           # ■/□ checklist generator
 │   ├── convert.py             # DOCX→PDF→PNG pipeline
-│   ├── fetch_templates.py     # Scrape or index official blank forms
+│   ├── fetch_templates.py     # Scrape or index official blank forms (+ 版次 drift: --update)
+│   ├── template_fill.py       # Fill an official blank in place (Form helper)
 │   ├── validate_layout.py     # Layout/font safety gate
-│   └── generators/            # KFSYSCC rebuild generators, one module per category
+│   └── generators/            # KFSYSCC rebuild generators (fallback when no blank is cached)
 │       ├── new_case.py        # SF001, SF002, SF094, SF011, SF022
 │       ├── consent.py         # SF003-005, SF062, SF063, SF075, SF090-092
 │       ├── closure.py         # SF036, SF037, SF038, SF023

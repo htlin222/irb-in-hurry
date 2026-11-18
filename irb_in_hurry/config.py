@@ -49,7 +49,11 @@ SECTION_KEYS = {
     "研究終點": "endpoints",
     "研究方法": "methods",
     "統計分析": "statistics",
+    "副作用處理": "adverse_events",
+    "研究參與者資料保護措施及安全監測計畫": "data_protection",
+    "資料保護措施": "data_protection",
     "附件": "attachments",
+    "附錄": "attachments",
 }
 
 STUDY_TYPES = ("retrospective", "prospective", "clinical_trial", "genetic")
@@ -68,6 +72,7 @@ DEFAULTS = {
     "study": {"irb_no": "", "drug_device": False, "genetic": False, "multicenter": False},
     "pi": {"phone": "", "email": ""},
     "co_pi": [],
+    "staff": [],
     "dates": {},
     "subjects": {"consent_waiver": False, "vulnerable_population": False},
     "closure": {"data_safety": {}},

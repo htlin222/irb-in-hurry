@@ -1,5 +1,8 @@
 """KFSYSCC form pack: which official forms exist and when each is required.
 
+New-case forms (SF001-005, SF022, SF094, PROPOSAL) are filled into the cached
+official blanks by `fill.py`, falling back to the rebuild when no blank is cached.
+
 FORM_REGISTRY: form_id → (name, generator module, function). `generators.*`
 paths are the generators shipped in `irb_in_hurry.generators`; any other path is
 an absolute module (e.g. `institutions.<id>.forms` for a pack in the study folder).
@@ -9,20 +12,20 @@ PHASE_FORMS:   phase → {"base": [...], "conditions": [(predicate(config), [...
 # Form registry: form_id → (Chinese name, generator module path, function name)
 FORM_REGISTRY = {
     # New case (新案審查)
-    "SF001": ("新案審查送審資料表", "generators.new_case", "generate_sf001"),
-    "SF002": ("研究計畫申請書", "generators.new_case", "generate_sf002"),
-    "SF003": ("簡易審查範圍檢核表", "generators.consent", "generate_sf003"),
-    "SF004": ("免予審查範圍檢核表", "generators.consent", "generate_sf004"),
-    "SF005": ("免取得知情同意檢核表", "generators.consent", "generate_sf005"),
+    "SF001": ("新案審查送審資料表", "irb_in_hurry.institutions.kfsyscc.fill", "generate_sf001"),
+    "SF002": ("研究計畫申請書", "irb_in_hurry.institutions.kfsyscc.fill", "generate_sf002"),
+    "SF003": ("簡易審查範圍檢核表", "irb_in_hurry.institutions.kfsyscc.fill", "generate_sf003"),
+    "SF004": ("免予審查範圍檢核表", "irb_in_hurry.institutions.kfsyscc.fill", "generate_sf004"),
+    "SF005": ("免取得知情同意檢核表", "irb_in_hurry.institutions.kfsyscc.fill", "generate_sf005"),
     "SF011": ("臨床試驗／研究許可證明", "generators.new_case", "generate_sf011"),
-    "SF022": ("資料及安全性監測計畫", "generators.new_case", "generate_sf022"),
+    "SF022": ("資料及安全性監測計畫", "irb_in_hurry.institutions.kfsyscc.fill", "generate_sf022"),
     "SF062": ("受試者同意書（臨床研究）", "generators.consent", "generate_sf062"),
     "SF063": ("受試者同意書（臨床試驗）", "generators.consent", "generate_sf063"),
     "SF075": ("受試者同意書（基因研究）", "generators.consent", "generate_sf075"),
     "SF090": ("受試者同意書（藥品試驗）", "generators.consent", "generate_sf090"),
     "SF091": ("受試者同意書（兒童）", "generators.consent", "generate_sf091"),
     "SF092": ("受試者同意書（醫療器材）", "generators.consent", "generate_sf092"),
-    "SF094": ("顯著財務利益申報表", "generators.new_case", "generate_sf094"),
+    "SF094": ("顯著財務利益申報表", "irb_in_hurry.institutions.kfsyscc.fill", "generate_sf094"),
     # Amendment (修正案審查)
     "SF014": ("修正案審查送審資料表", "generators.amendment", "generate_sf014"),
     "SF015": ("修正案申請表", "generators.amendment", "generate_sf015"),
@@ -63,7 +66,7 @@ FORM_REGISTRY = {
     # Other
     "SF076": ("閱卷複印申請登記表", "generators.other", "generate_sf076"),
     # Non-SF forms (required documents)
-    "PROPOSAL": ("中文計畫摘要", "generators.proposal", "generate_proposal_summary"),
+    "PROPOSAL": ("中文計畫摘要", "irb_in_hurry.institutions.kfsyscc.fill", "generate_proposal_summary"),
 }
 
 # Phase → form selection rules

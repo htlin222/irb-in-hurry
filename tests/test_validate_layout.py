@@ -12,7 +12,8 @@ from irb_in_hurry.docx_utils import (
     load_config,
     official_margins,
 )
-from irb_in_hurry.form_selector import load_generator, select_forms
+from irb_in_hurry.form_selector import select_forms
+from irb_in_hurry.generate_all import generate_form_paths
 from irb_in_hurry.validate_layout import validate_file
 
 PHASES = ["new", "amendment", "continuing", "closure"]
@@ -27,9 +28,7 @@ def _generate(config, phase, out):
     config["phase"] = phase
     paths = []
     for fid, _ in select_forms(config):
-        path = load_generator(fid)(config, out)
-        apply_official_page_setup(path)
-        paths.append(path)
+        paths += generate_form_paths(fid, config, out)
     return paths
 
 
@@ -74,7 +73,7 @@ def test_non_big5_characters_warned(tmp_path):
     doc = init_doc()
     add_p(doc, "酪胺酸激酶抑制劑")   # 酶 is outside Big5
     add_p(doc, "简体字")
-    path = str(tmp_path / "SF001_glyph.docx")
+    path = str(tmp_path / "glyph_check.docx")  # no form id: no blank comparison
     doc.save(path)
     apply_official_page_setup(path)
     rep = validate_file(path, render=False)

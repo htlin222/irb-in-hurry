@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
 
 from docx import Document
 from docx.oxml.ns import qn
@@ -35,13 +36,15 @@ from irb_in_hurry.institution import current
 
 PAGE_TOL = 60                  # ~1 mm
 MARGIN_TOL = 115               # ~2 mm
-LABEL_COVERAGE_WARN = 0.5
+LABEL_COVERAGE_ERROR = 0.5     # below: a rebuild, not the official form
+LABEL_COVERAGE_WARN = 0.7      # filled blanks drop only optional rows/appendices
 
 CJK_RE = re.compile(r"[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef\u3000-\u303f]")
 MARGIN_KEYS = ("left", "right", "top", "bottom")
 # PDF font names that mean the renderer had no Kai font and fell back
 FALLBACK_FONT_HINTS = ("DejaVu", "WenQuanYi", "Droid", "Unifont", "Noto Sans",
-                       "PingFang", "Heiti", "MingLiU", "PMingLiU", "SimSun")
+                       "PingFang", "Heiti", "MingLiU", "PMingLiU", "SimSun",
+                      "CJKjp", "CJKJP", "Emoji")
 
 
 class Report:
@@ -174,20 +177,38 @@ def fmt_cm(size):
     return "×".join(f"{v / 567:.1f}" if v else "?" for v in size) + "cm"
 
 
-def check_fonts(doc, rep):
+def _cjk_fonts(doc):
+    """{resolved eastAsia font: sample text} over every CJK run of a document."""
+    res, fonts = FontResolver(doc), {}
+    for root in _story_roots(doc):
+        for r in root.iter(qn("w:r")):
+            text = "".join(t.text or "" for t in r.iter(qn("w:t")))
+            if text.strip() and CJK_RE.search(text):
+                fonts.setdefault(res.resolve(r, "eastAsia"), text.strip()[:20])
+    return fonts
+
+
+def _story_roots(doc):
+    return [doc.element.body] + [hf._element for s in doc.sections
+                                 for hf in (s.header, s.footer) if not hf.is_linked_to_previous]
+
+
+def check_fonts(doc, rep, tpl_doc=None):
     res = FontResolver(doc)
     font = current().font
+    # the official blank is the ground truth: fonts it uses itself are not errors
+    allowed = set(current().font_aliases)
+    if tpl_doc is not None:
+        allowed |= set(_cjk_fonts(tpl_doc))
     bad_cjk, bad_latin = {}, {}
-    elements = [doc.element.body] + [hf._element for s in doc.sections
-                                     for hf in (s.header, s.footer) if not hf.is_linked_to_previous]
-    for root in elements:
+    for root in _story_roots(doc):
         for r in root.iter(qn("w:r")):
             text = "".join(t.text or "" for t in r.iter(qn("w:t")))
             if not text.strip():
                 continue
             if CJK_RE.search(text):
                 f = res.resolve(r, "eastAsia")
-                if f not in current().font_aliases:
+                if f not in allowed:
                     bad_cjk.setdefault(f, text.strip()[:20])
             if re.search(r"[A-Za-z0-9]", text):
                 f = res.resolve(r, "ascii")
@@ -214,17 +235,26 @@ def check_fonts(doc, rep):
         rep.warn(f"fontTable 的{font['name']}缺 altName {alt} — Mac/英文版 Word 可能找不到")
 
 
+# Glyphs outside Big5 that writers reach for, and the Big5 character to use instead.
+GLYPH_SUGGEST = {
+    "≥": "≧", "≤": "≦", "✓": "√", "✔": "√", "☑": "■", "☒": "■", "☐": "□",
+    "↔": "←→", "⇒": "→", "–": "－", "—": "－", "−": "－", "µ": "μ", "蒽": "（改寫英文，如 anthracycline）",
+}
+
+
 def check_glyphs(text, rep):
     font = current().font
     enc = font.get("encoding")
     if not enc:
         return
-    odd = sorted({c for c in text if ord(c) > 127 and not _in_encoding(c, enc)})
+    odd = sorted({c for c in text if ord(c) > 127 and not c.isspace() and not _in_encoding(c, enc)})
     if odd:
         sample = "".join(odd[:15])
         label = "Big5" if enc.lower() in ("cp950", "big5") else enc
+        hints = [f"{c}→{GLYPH_SUGGEST[c]}" for c in odd if c in GLYPH_SUGGEST]
         rep.warn(f"{len(odd)} 個字元超出 {label}（{font['name']}可能缺字，Win/Mac 會各自補字型）："
-                 f"{sample} — 請在 PDF 確認字體一致")
+                 f"{sample}" + (f"；建議改用 {'、'.join(hints)}" if hints else "")
+                 + " — 請在 PDF 確認字體一致")
 
 
 def _in_encoding(ch, enc):
@@ -239,7 +269,8 @@ LABEL_SPLIT_RE = re.compile(r"[\s□■☐☑✓✔_＿:：,，、。.;；()（�
 
 
 def _norm(s):
-    return re.sub(r"[\s□■☐☑_＿:：]", "", s)
+    # NFC: CJK compatibility ideographs in a blank equal their unified forms
+    return re.sub(r"[\s□■☐☑_＿:：]", "", unicodedata.normalize("NFC", s))
 
 
 def template_labels(tpl_doc):
@@ -264,10 +295,29 @@ def check_labels(doc, tpl_doc, rep):
     missing = [label for label in labels if _norm(label) not in gen]
     cov = 1 - len(missing) / len(labels)
     msg = f"官方表單文字涵蓋率 {cov:.0%}（{len(labels) - len(missing)}/{len(labels)}）"
-    if cov < LABEL_COVERAGE_WARN:
-        rep.warn(msg + "；缺：" + "、".join(missing[:8]) + ("…" if len(missing) > 8 else ""))
+    lacking = "；缺：" + "、".join(missing[:8]) + ("…" if len(missing) > 8 else "")
+    if cov < LABEL_COVERAGE_ERROR:
+        rep.error(msg + " — 這是重新排版的表單，不是官方空白表單（缺官方說明、選項或審查欄，"
+                  "委員會可能以非現行版本退件）；請改為填寫官方空白表單" + lacking)
+    elif cov < LABEL_COVERAGE_WARN:
+        rep.warn(msg + lacking)
     else:
         rep.note(msg)
+
+
+def check_version(doc, tpl_doc, rep):
+    """版次/編修日期 printed on the output must match the cached official blank."""
+    from irb_in_hurry.fetch_templates import form_version
+    want, got = form_version(tpl_doc), form_version(doc)
+    if want[0] is None:
+        return
+    if got[0] is None:
+        rep.warn(f"找不到版次（官方空白表單為第{want[0]}版 {want[1] or ''}）— 確認使用現行版本表單")
+    elif got[0] != want[0] or (want[1] and got[1] and got[1] != want[1]):
+        rep.error(f"表單版次為第{got[0]}版 {got[1] or ''}，官方現行為第{want[0]}版 {want[1] or ''}"
+                  " — 非現行版本表單會被退件")
+    else:
+        rep.note(f"版次第{got[0]}版 {got[1] or ''}（與官方空白表單一致）")
 
 
 # ---------------------------------------------------------------------------
@@ -385,10 +435,11 @@ def validate_file(path, render=False, tmp_dir=None, compare_dir=None):
     if fid and tpl is None:
         rep.note("無官方空白表單快取（執行 irbh templates）— 僅檢查紙張/字型")
     check_page(doc, tpl, fid, rep)
-    check_fonts(doc, rep)
+    check_fonts(doc, rep, tpl)
     check_glyphs(all_text(doc), rep)
     if tpl is not None:
         check_labels(doc, tpl, rep)
+        check_version(doc, tpl, rep)
     if render:
         check_render(path, fid, tmp_dir, compare_dir, rep)
     return rep

@@ -40,9 +40,12 @@ Installed users run the same commands as `irbh <x>` in any study folder
 - **Active institution**: `IRB_INSTITUTION` env → `institution` in config.toml → `kfsyscc`
 - **Pack lookup** (first wins): `<cwd>/institutions/<id>/` (local, from `irbh onboard`) →
   `irb_in_hurry.institutions` entry points (installed packages) → bundled `irb_in_hurry/institutions/<id>/`
-- **Generators**: prefer `template_fill.blank_generator` (fill the official blank); rebuild with python-docx only when a blank can't be filled
+- **Generators**: prefer `template_fill.blank_generator` / `template_fill.Form` (fill the official blank);
+  rebuild with python-docx only when a blank can't be filled. KFSYSCC new-case forms are filled by
+  `institutions/kfsyscc/fill.py` (falls back to the rebuild when no blank is cached)
 - **Font**: the profile's `font` (KFSYSCC: 標楷體 / DFKai-SB); no theme fonts (`pin_form_font`)
-- **Checkbox**: ■ (U+25A0) = checked, □ (U+25A1) = unchecked, via `check()`
+- **Checkbox**: ■ (U+25A0) = checked, □ (U+25A1) = unchecked, via `check()`; Wingdings boxes in blanks
+  are rewritten to □/■/√ (`normalize_symbols`). Only Big5 glyphs: ≧ not ≥, √ not ✓
 - **Config (SSOT)**: All study data in plain text, never hardcoded. `config.toml` holds
   structured fields; `"@file"` / `"@file#key"` values inline other files (`@cv.toml#pi`,
   `@中文計畫摘要.md`). Long prose goes in Markdown (`## 標題` → section key), not TOML strings.
@@ -51,7 +54,8 @@ Installed users run the same commands as `irbh <x>` in any study folder
 - **Output**: DOCX → `output/`, PDF → `output/`, PNG previews → `output/preview/`
 - **Page**: profile page size + per-form margins, applied by `generate_all`
 - **Blanks**: `templates/<id>/` in the study folder (gitignored; `$IRB_TEMPLATES/<id>/` to share), the gate's ground truth, never edited, never packaged
-- **Layout gate**: `make validate` must show 0 errors before submission; PDF is the submission copy
+- **Layout gate**: `make validate` must show 0 errors before submission; PDF is the submission copy.
+  Errors include official-text coverage < 50% (a rebuild, not the blank) and 版次/編修日期 ≠ the cached blank
 
 ## Project Structure
 
@@ -60,7 +64,8 @@ Installed users run the same commands as `irbh <x>` in any study folder
 - `irb_in_hurry/examples/` — Complete example studies (`irbh init <name>` / `make init EXAMPLE=<name>`)
 - `irb_in_hurry/institution.py` — Pack lookup (local → installed → bundled) + active profile loader
 - `irb_in_hurry/config.py` — config.toml loader (`@` references, Markdown sections, `irbh check`) + validation: required fields, enums, real booleans, defaults for optional sections
-- `irb_in_hurry/template_fill.py` — Generic fill-the-blank generator (labels → values, □ → ■)
+- `irb_in_hurry/template_fill.py` — Fill-the-blank engine: `blank_generator` (labels → values, □ → ■) and `Form`
+  (scoped checks, row clone/delete, block delete, Wingdings → □/■/√)
 - `irb_in_hurry/onboard.py` — Blank forms → draft profile + forms.py + inventory in `<cwd>/institutions/<id>/`
 - `irb_in_hurry/docx_utils.py` — Shared DOCX helpers (profile-aware; `form_filename` for output names)
 - `irb_in_hurry/form_selector.py` — Phase + study type → required forms (active pack); shared `PHASE_NAMES`

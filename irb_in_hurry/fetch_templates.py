@@ -121,20 +121,59 @@ def to_docx(doc_path):
     return docx if os.path.exists(docx) else None
 
 
-def main(force=False):
+VERSION_RE = re.compile(r"版\s*次\s*[:：]?\s*第\s*(\d+)\s*版")
+REVISED_RE = re.compile(r"編修日期\s*[:：]?\s*(\d{4}\s*/\s*\d{1,2}\s*/\s*\d{1,2})")
+
+
+def form_version(doc):
+    """(版次, 編修日期) printed on a form (header or footer included), or (None, None)."""
+    from docx.oxml.ns import qn
+    roots = [doc.element.body] + [hf._element for s in doc.sections
+                                  for hf in (s.header, s.footer) if hf._has_definition]
+    text = "".join(t.text or "" for r in roots for t in r.iter(qn("w:t")))
+    v, d = VERSION_RE.search(text), REVISED_RE.search(text)
+    return (v.group(1) if v else None, re.sub(r"\s", "", d.group(1)) if d else None)
+
+
+def _docx_version(path):
+    try:
+        from docx import Document
+        return form_version(Document(path))
+    except Exception:
+        return (None, None)
+
+
+def _read_index(template_dir):
+    try:
+        with open(os.path.join(template_dir, INDEX_FILE), encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
+def main(force=False, update=False):
+    """Cache the blanks. update=True re-downloads and reports forms KFSYSCC-style
+    版次/編修日期 changes (a revised form makes earlier fills non-current)."""
     inst = current()
     template_dir = inst.template_dir
     os.makedirs(template_dir, exist_ok=True)
+    previous = _read_index(template_dir)
     if index_pages():
         print(f"Scraping {inst.name} form index ({len(index_pages())} pages)...")
         links = scrape_links()
+        if not links:
+            local = local_forms(template_dir)
+            if local:
+                print(f"⚠ Form index unreachable — indexing the {len(local)} blanks already in "
+                      f"{os.path.relpath(template_dir)}/ (from an earlier run, or copied there by hand)")
+                links = local
     else:
         print(f"No templates.index_url for '{inst.id}' — indexing blanks in "
               f"{os.path.relpath(template_dir)}/ (name each file with its form id)")
         links = local_forms(template_dir)
     print(f"Found {len(links)} official forms\n")
 
-    index = {}
+    index, changed = {}, []
     for fid, info in sorted(links.items()):
         existing = [f for f in os.listdir(template_dir) if f.startswith(fid + ".")]
         if "file" in info:
@@ -164,12 +203,25 @@ def main(force=False):
             docx = to_docx(raw_path)
             if docx is None:
                 print(f"    ⚠ {fid}: .doc→.docx conversion failed (LibreOffice missing?)")
+        has_docx = bool(docx and os.path.exists(docx))
+        version, revised = _docx_version(docx) if has_docx else (None, None)
         index[fid] = {**info, "source": raw,
-                      "docx": os.path.basename(docx) if docx and os.path.exists(docx) else None}
+                      "docx": os.path.basename(docx) if has_docx else None,
+                      "version": version, "revised": revised}
+        old = previous.get(fid) or {}
+        if version and old.get("version") and (old.get("version"), old.get("revised")) != (version, revised):
+            changed.append(f"{fid} 第{old.get('version')}版 {old.get('revised') or ''} → "
+                           f"第{version}版 {revised or ''}")
 
     with open(os.path.join(template_dir, INDEX_FILE), "w", encoding="utf-8") as f:
         json.dump(index, f, ensure_ascii=False, indent=2)
     print(f"\n■ {len(index)} templates indexed → {os.path.relpath(template_dir)}/{INDEX_FILE}")
+    if changed:
+        print("\n⚠ Official forms revised since the last download — regenerate and re-check:")
+        for line in changed:
+            print(f"  {line}")
+    elif update:
+        print("■ No revised forms (版次/編修日期 unchanged)")
 
 
 if __name__ == "__main__":

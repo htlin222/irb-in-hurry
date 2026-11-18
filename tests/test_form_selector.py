@@ -83,7 +83,7 @@ def test_get_generator_returns_tuple():
     result = get_generator("SF001")
     assert result is not None
     mod_path, func_name = result
-    assert "new_case" in mod_path
+    assert mod_path == "irb_in_hurry.institutions.kfsyscc.fill"  # fills the official blank
     assert func_name == "generate_sf001"
 
 

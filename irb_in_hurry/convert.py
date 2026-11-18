@@ -29,11 +29,27 @@ def find_soffice():
 
 
 def soffice_env():
-    """On Linux, map 標楷體/DFKai-SB to an installed Kai font so renders keep metrics."""
+    """On Linux, map the forms' Windows CJK fonts to installed Traditional Chinese faces
+    (fonts.conf) and run LibreOffice in a zh_TW locale, so renders keep metrics and
+    Taiwan glyph shapes instead of falling back to Noto CJK JP."""
     env = dict(os.environ)
-    if sys.platform.startswith("linux") and os.path.exists(FONTS_CONF):
-        env["FONTCONFIG_FILE"] = FONTS_CONF
+    if sys.platform.startswith("linux"):
+        if os.path.exists(FONTS_CONF):
+            env["FONTCONFIG_FILE"] = FONTS_CONF
+        loc = zh_tw_locale()
+        if loc:  # a missing locale would break UTF-8 (Chinese) file names
+            env["LANG"] = env["LC_ALL"] = loc
     return env
+
+
+def zh_tw_locale():
+    """Name of an installed zh_TW UTF-8 locale, or None."""
+    try:
+        out = subprocess.run(["locale", "-a"], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return next((loc for loc in out.split()
+                 if loc.lower().replace("-", "") in ("zh_tw.utf8",)), None)
 
 
 def soffice_cmd(soffice, *args):

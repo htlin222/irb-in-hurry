@@ -18,10 +18,20 @@ from irb_in_hurry.institution import activate
 
 
 def generate_form(form_id, config, output_dir):
-    """Run one form's generator and normalize its page setup. Returns the DOCX path."""
-    path = load_generator(form_id)(config, output_dir)
-    apply_official_page_setup(path)
-    return path
+    """Run one form's generator; returns the primary DOCX path (see generate_form_paths)."""
+    return generate_form_paths(form_id, config, output_dir)[0]
+
+
+def generate_form_paths(form_id, config, output_dir):
+    """Run one form's generator and normalize its page setup. Returns the DOCX paths.
+
+    A generator returns one path, or a list when a form is filed once per person
+    (e.g. one SF094 per team member)."""
+    result = load_generator(form_id)(config, output_dir)
+    paths = list(result) if isinstance(result, (list, tuple)) else [result]
+    for path in paths:
+        apply_official_page_setup(path)
+    return paths
 
 
 def main(config_path="config.toml", output_dir="output", phase=None, verbose=False,
@@ -69,15 +79,15 @@ def main(config_path="config.toml", output_dir="output", phase=None, verbose=Fal
             results.append((fid, name_zh, None, "missing"))
             continue
         try:
-            path = generate_form(fid, config, output_dir)
+            paths = generate_form_paths(fid, config, output_dir)
         except Exception as e:
             print(f"  ✗ {fid} {name_zh} — ERROR: {type(e).__name__}: {e}")
             if verbose:
                 traceback.print_exc()
             results.append((fid, name_zh, None, "error"))
             continue
-        print(f"  ■ {fid} {name_zh} → {os.path.basename(path)}")
-        results.append((fid, name_zh, path, "generated"))
+        print(f"  ■ {fid} {name_zh} → {', '.join(os.path.basename(p) for p in paths)}")
+        results.append((fid, name_zh, paths[0], "generated"))
 
     generate_checklist(config, results, phase_zh, checklist_path)
 

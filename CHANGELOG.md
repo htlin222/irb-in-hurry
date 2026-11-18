@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased — fill the official KFSYSCC blanks
+
+- **KFSYSCC new-case forms fill the official blanks** (htlin222/irb-in-hurry#15,
+  htlin222/irb-in-hurry#16): SF001, SF002 (v12), SF003, SF004, SF005, SF022, SF094 and
+  中文計畫摘要 are copied from `templates/kfsyscc/` and filled in place
+  (`institutions/kfsyscc/fill.py`), keeping the official header (版次/編修日期/文件標號),
+  every option, instructions and reviewer sections. SF002 drops the 總主持人, 研究人員
+  and 附表 parts a study doesn't need and clones a row per co-PI; SF094 is produced once
+  per team member with the name on its own line (htlin222/irb-in-hurry#19); 中文計畫摘要 follows the
+  official 11 headings with a 版本／日期／第 X 頁共 Y 頁 footer. Without a cached
+  blank the old rebuild is used, with a warning.
+- **`template_fill.Form`**: scoped `check` / `put` / `cell` / `sub`, row clone/delete,
+  block delete and paragraph insertion for any pack; inserted values are runs of
+  their own in the form font.
+- **Wingdings checkboxes** (`w:sym` and private-use characters) become □/■/√ in the
+  form font, so PDFs no longer show ☒ for unchecked boxes (htlin222/irb-in-hurry#18); Symbol-font ≤/≥
+  become ≦/≧; CJK compatibility ideographs from .doc conversion are NFC-normalized.
+- **Layout gate**: official-text coverage < 50% is now an error (a rebuild is not the
+  official form) and a 版次/編修日期 that differs from the cached blank is an error
+  (non-current form). Fonts used by the blank itself are accepted. The Big5 check
+  suggests replacements (≥→≧, ✓→√, …) and ignores whitespace (htlin222/irb-in-hurry#15, htlin222/irb-in-hurry#19).
+- **`irbh templates`**: records each blank's 版次/編修日期 in `index.json`; `--update`
+  re-downloads and lists revised forms; when the index site is unreachable the blanks
+  already in `templates/<id>/` are indexed.
+- **Linux rendering** (htlin222/irb-in-hurry#17): `fonts.conf` maps 新細明體/細明體/PMingLiU/MingLiU/MS Mincho
+  → AR PL UMing TW and 微軟正黑體/Noto CJK JP → Noto CJK TC, and prefers zh-TW glyphs;
+  LibreOffice runs in `zh_TW.UTF-8` when that locale is installed.
+- New optional config fields (see `config-schema.md`): `staff`, `contact`,
+  `supervisor`, `pi.training_hours`, `study.funding` / `sponsor` / `doc_version` /
+  `doc_date`, `subjects.population` / `age_range` / `waiver_criteria` /
+  `waiver_reason`, and proposal sections `adverse_events` / `data_protection`.
+
 ## 2.0.0 — installable package
 
 IRB-in-Hurry is now a Python package (`irb-in-hurry`) with one command, `irbh`.
